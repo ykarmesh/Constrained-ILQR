@@ -5,6 +5,15 @@
 #########################################################################
 import random
 import time
+import platform
+import sys
+
+# Display Python version
+python_version = platform.python_version()
+print('Python', python_version)
+CARLA2 = '/mnt/data/Builds/CARLA_0.9.6/PythonAPI/carla/dist/carla-0.9.5-py2.7-linux-x86_64.egg'
+if python_version.startswith('3'):
+    if CARLA2 in sys.path: sys.path.remove(CARLA2)
 
 import carla
 from agents.navigation.basic_agent import BasicAgent
@@ -13,6 +22,7 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.navigation.local_planner import RoadOption
 from route_manipulation import interpolate_trajectory
 
+import arguments
 
 DEBUG = True
 
