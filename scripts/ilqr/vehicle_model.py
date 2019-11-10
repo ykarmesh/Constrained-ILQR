@@ -1,14 +1,14 @@
 import numpy as np
 
 class Model:
-    def __init__(self, wheelbase, steering_limits, acceleration_limits, timestep, horizon):
-        self.wheelbase = wheelbase
-        self.steer_min = steering_limits[0]
-        self.steer_max = steering_limits[1]
-        self.accel_min = acceleration_limits[0]
-        self.accel_max = acceleration_limits[1]
-        self.Ts = timestep
-        self.N = horizon
+    def __init__(self, args):
+        self.wheelbase = args.wheelbase
+        self.steer_min = args.steering_limits[0]
+        self.steer_max = args.steering_limits[1]
+        self.accel_min = args.acceleration_limits[0]
+        self.accel_max = args.acceleration_limits[1]
+        self.Ts = args.timestep
+        self.N = args.horizon
         
     def forward_simulate(self, state, control):
         next_state = np.array([[state[0] + cos(state[3])*(state[2]*self.Ts + (control[0]*Ts**2)/2)],
@@ -33,7 +33,7 @@ class Model:
 
     def get_B_matrix(self, theta):
         z = np.zeros((self.N))
-        o = no.ones((self.N))
+        o = np.ones((self.N))
         B = np.array([[self.Ts*cos(theta), z],
                       [self.Ts*cos(theta), z],
                       [                 o, z],

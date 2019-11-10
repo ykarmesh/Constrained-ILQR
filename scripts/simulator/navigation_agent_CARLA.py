@@ -3,7 +3,9 @@
 #####                   Written By: Karmesh Yadav                   #####
 #####                     Modified: 18/10/19                        #####
 #########################################################################
+import argparse
 import logging
+import os
 import platform
 import pdb
 import random
@@ -22,6 +24,10 @@ if python_version.startswith('3'):
         sys.path.remove(CARLA2)
         print("Deleting Carla 2.7 from pythonpath")
 
+try:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+except IndexError:
+    pass
 
 import carla
 from agents.navigation.basic_agent import BasicAgent
@@ -30,10 +36,11 @@ from agents.navigation.global_route_planner_dao import GlobalRoutePlannerDAO
 from agents.navigation.local_planner import RoadOption
 from route_manipulation import interpolate_trajectory
 
-import arguments
+from arguments import add_arguments
 
 class Carla_Interface():
-    def __init__(self, town='Town01', verbose=False):
+    def __init__(self, args, town='Town01', verbose=False):
+        self.args = args
         self.verbose = verbose
         self.client = carla.Client('127.0.0.1', 2000)
         self.client.set_timeout(10.0)
@@ -50,35 +57,42 @@ class Carla_Interface():
         # Find valid points for spawning the vehicle
         self.spawn_points = self.world_map.get_spawn_points()
 
-        self.spawn_ego_vehicle()
         self.sensors = {}
         self.vehicles_list = []
         self.plan = []
         self.navigation_agent = None
-        self.create_global_plan()
 
+        self.spawn_ego_vehicle()
+        if self.args.add_npc_agents:
+            self.spawn_npc()
+
+        self.create_global_plan()
         self.setup_rendering()
 
     def setup_rendering(self):
         pygame.init()
-        self.display = pygame.display.set_mode((1600, 800), pygame.HWSURFACE | pygame.DOUBLEBUF)
 
-        self.camera_1 = pygame.Rect(0,0,800,800)
-        self.camera_2 = pygame.Rect(800,0,1600,800)
+        w = self.args.camera_width
+        h = self.args.camera_height
+        
+        self.display = pygame.display.set_mode((2*w, h), pygame.HWSURFACE | pygame.DOUBLEBUF)
+
+        self.camera_1 = pygame.Rect(0,0,w,h)
+        self.camera_2 = pygame.Rect(w,0,2*w,h)
 
         self.surface = {}
         # Setup Camera 2
         cam_transform = carla.Transform(carla.Location(x=1, y=0, z=30.0), carla.Rotation(pitch=-90, roll=0 ,yaw=0))
-        self.add_sensor('rgb_top', 800, 800, cam_transform, self.image_callback)
+        self.add_sensor('rgb_top', w, h, cam_transform, self.image_callback)
 
         # Setup Camera 1
         cam_transform = carla.Transform(carla.Location(x=1, y=0, z=2.0), carla.Rotation(pitch=0, roll=0 ,yaw=0))
-        self.add_sensor('rgb_front', 800, 800, cam_transform, self.image_callback)
+        self.add_sensor('rgb_front', w, h, cam_transform, self.image_callback)
 
 
     def spawn_ego_vehicle(self):
         # Get a random vehicle from world
-        blueprint = random.choice(self.world.get_blueprint_library().filter('bmw'))
+        blueprint = random.choice(self.world.get_blueprint_library().filter('tesla'))
         blueprint.set_attribute('role_name', 'hero')
 
         # Set spawn point(start) and goal point according to use case
@@ -160,7 +174,7 @@ class Carla_Interface():
             if self.verbose:
                 print(self.ego_vehicle.get_location())
 
-    def spawn_npc(self, number_of_vehicles=10):
+    def spawn_npc(self):
         blueprints = self.world.get_blueprint_library().filter('vehicle.*')
         blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
         blueprints = [x for x in blueprints if not x.id.endswith('isetta')]
@@ -172,7 +186,7 @@ class Carla_Interface():
 
         batch = []
         for n, transform in enumerate(self.spawn_points):
-            if n >= number_of_vehicles:
+            if n >= self.args.number_of_npc:
                 break
             blueprint = random.choice(blueprints)
             if blueprint.has_attribute('color'):
@@ -233,8 +247,11 @@ class Carla_Interface():
 
 if __name__ == "__main__":
     try:
-        carla_interface = Carla_Interface()
-        carla_interface.spawn_npc()
+        argparser = argparse.ArgumentParser(description='CARLA CILQR')
+        add_arguments(argparser)
+        args = argparser.parse_args()
+        pdb.set_trace()
+        carla_interface = Carla_Interface(args)
         carla_interface.create_pid_agent()
         carla_interface.run_step_pid()
     except KeyboardInterrupt:
