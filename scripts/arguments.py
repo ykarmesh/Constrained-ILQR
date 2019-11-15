@@ -12,6 +12,8 @@ def add_arguments(parser):
 
 
     # ___________________ Planning Parameters ___________________ #
+    parser.add_argument('--number_of_local_wpts', type= int, default=10, help='Number of local waypoints')
+
 
     # ___________________ iLQR Parameters ___________________ #
     parser.add_argument('--timestep', type=float, default=0.01, help='Timestep at which forward and backward pass are done by iLQR')
