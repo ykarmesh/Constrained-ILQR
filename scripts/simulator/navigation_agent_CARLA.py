@@ -37,6 +37,7 @@ from agents.navigation.local_planner import RoadOption
 from route_manipulation import interpolate_trajectory
 
 from arguments import add_arguments
+from scripts.iLQR import iLQR
 
 class Carla_Interface():
     def __init__(self, args, town='Town01', verbose=False):
@@ -59,7 +60,8 @@ class Carla_Interface():
 
         self.sensors = {}
         self.vehicles_list = []
-        self.plan = []
+        self.plan_pid = []
+        self.plan_ilqr = []
         self.navigation_agent = None
 
         self.spawn_ego_vehicle()
@@ -88,7 +90,6 @@ class Carla_Interface():
         # Setup Camera 1
         cam_transform = carla.Transform(carla.Location(x=1, y=0, z=2.0), carla.Rotation(pitch=0, roll=0 ,yaw=0))
         self.add_sensor('rgb_front', w, h, cam_transform, self.image_callback)
-
 
     def spawn_ego_vehicle(self):
         # Get a random vehicle from world
@@ -137,9 +138,9 @@ class Carla_Interface():
         # Make a Plan list which stores points as desired by BasicAgent Class
         for transform, road_option in route:
             wp = self.world_map.get_waypoint(transform.location)
-            self.plan.append((wp, road_option))
+            self.plan_pid.append((wp, road_option))
+            self.plan_ilqr.append(np.array([wp.transform.location.x, wp.transform.location.y]))
 
-        return self.plan
 
     def get_ego_states(self):
         vehicle_transform = self.ego_vehicle.get_transform()
@@ -158,7 +159,7 @@ class Carla_Interface():
     def create_pid_agent(self, target_speed=20):
         # Carla Funtion for Creating a Basic Navigation Agent
         self.navigation_agent = BasicAgent(self.ego_vehicle, target_speed)
-        self.navigation_agent._local_planner.set_global_plan(self.plan)
+        self.navigation_agent._local_planner.set_global_plan(self.plan_pid)
 
     def run_step_pid(self):
         # Loop for controls
@@ -173,6 +174,18 @@ class Carla_Interface():
 
             if self.verbose:
                 print(self.ego_vehicle.get_location())
+
+    def create_ilqr_agent(self):
+        self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
+        self.navigation_agent.set_global_plan(self.plan_ilqr)
+
+    def run_step_ilqr(self):
+        assert self.navigation_agent != None, "Navigation Agent not initialized"
+
+        while True:
+            control = self.navigation_agent.run_step()
+            self.ego_vehicle.apply_control(control)
+
 
     def spawn_npc(self):
         blueprints = self.world.get_blueprint_library().filter('vehicle.*')
@@ -228,7 +241,7 @@ class Carla_Interface():
         bbs = []
         for n in range(len(self.vehicles_list)):
             bbs.append(np.array([2*self.vehicles_list[n].bounding_box.extent.x,
-                                  2*self.vehicles_list[n].bounding_box.extent.y]))
+                                 2*self.vehicles_list[n].bounding_box.extent.y]))
         return bbs
 
     def destroy(self):
