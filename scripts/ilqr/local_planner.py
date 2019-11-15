@@ -6,20 +6,20 @@ class LocalPlanner:
     Created by iLQR class based on the plan provided by the simulator
     """
     def __init__(self, args):
-        raise NotImplementedError
+        self.args = args
+        self.global_plan = None
 
-    def set_global_planner(self):
+    def set_global_planner(self, global_plan):
         """
         Sets the global plan of the ego vehicle
         """
-        # TODO: Call Carla function to get waypoints from start to goal
-        raise NotImplementedError
+        self.global_plan = global_plan
 
     def create_local_plan_function(self):
         """
         Creates a local plan based on the waypoints on the global planner 
         """
-        local_wpts = [[wpts[i,0],wpts[i,1]] for i in range(self.args.number.number_of_local_wpts)]
+        local_wpts = [[wpts[i,0],wpts[i,1]] for i in range(self.args.number_of_local_wpts)]
         x = local_wpts[:,0]
         y = local_wpts[:,1]
         coeffs = np.polyfit(x, y, 3)
@@ -28,7 +28,7 @@ class LocalPlanner:
     def get_local_plan(self)
         coeffs = self.create_local_plan_function()
         # Change dependinng on discretization
-        local_plan = [[x[i],x[i]**3*coeffs[0] + x[i]**2*coeffs[1] + x[i]*coeffs[2] + coeffs[3]] for i in range(self.args.number.number_of_local_wpts)]
+        local_plan = [[x[i],x[i]**3*coeffs[0] + x[i]**2*coeffs[1] + x[i]*coeffs[2] + coeffs[3]] for i in range(self.args.number_of_local_wpts)]
 
         return local_plan
 

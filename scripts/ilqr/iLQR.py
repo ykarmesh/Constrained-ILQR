@@ -14,6 +14,7 @@ class iLQR():
         self.tol = args.tol
         self.obstacle_bb = obstacle_bb
         
+        self.global_plan = None
         self.local_planner = LocalPlanner(args)
         self.vehicle_model = Model(args)
         self.constraints = Constraints(args)
@@ -29,4 +30,5 @@ class iLQR():
         raise NotImplementedError
 
     def run_step(self):
+        assert self.global_plan is not None, "Set a global plan in iLQR before starting run_step"
         raise NotImplementedError
