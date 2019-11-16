@@ -56,7 +56,7 @@ class Constraints:
 		return np.mamtul(np.matmul(self.args.w_acc*self.contro.T*np.array([[0,0],[0,1]]))*self.control)
 
 	def desired_pose_function(self, x):
-        return x**3*self.coeffs[0] + x**2*self.coeffs[1] + x*self.coeffs[2] + self.coeffs[3]
+        return np.polyval(self.coeffs,x)
 
     def offset_obj(self, X):
 		x,y = X
