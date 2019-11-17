@@ -37,6 +37,7 @@ from agents.navigation.local_planner import RoadOption
 from route_manipulation import interpolate_trajectory
 
 from arguments import add_arguments
+from simulator.low_level_controller import LowLevelController
 from scripts.iLQR import iLQR
 
 class Carla_Interface():
@@ -147,12 +148,10 @@ class Carla_Interface():
         vehicle_velocity = self.ego_vehicle.get_velocity()
         vehicle_angular_velocity = self.ego_vehicle.get_angular_velocity()
 
-        ego_states = np.array([vehicle_transform.location.x,
-                               vehicle_transform.location.y,
-                               vehicle_velocity.x,
-                               vehicle_velocity.y,
-                               vehicle_transform.rotation.yaw,
-                               vehicle_angular_velocity.z])
+        ego_states = np.array([[vehicle_transform.location.x, vehicle_transform.location.y, vehicle_transform.location.z],
+                                [vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z],
+                                [vehicle_transform.rotation.roll, vehicle_transform.rotation.pitch, vehicle_transform.rotation.yaw],
+                                [vehicle_angular_velocity.x, vehicle_angular_velocity.y, vehicle_angular_velocity.z]])
         
         return ego_states
 
