@@ -55,7 +55,6 @@ class Constraints:
     def get_yawrate_cost(self):
         return np.mamtul(np.matmul(self.args.w_acc*self.contro.T*np.array([[0,0],[0,1]]))*self.control)
 
-<<<<<<< HEAD
     def desired_pose_function(self, x):
         return np.polyval(self.coeffs,x)
 
@@ -66,18 +65,6 @@ class Constraints:
     def c1(X):
         x,y = X
         return desired_pose_function(x) - y
-=======
-	def desired_pose_function(self, x):
-		return np.polyval(self.coeffs,x)
-
-	def offset_obj(self, X):
-		x,y = X
-		return np.sqrt((x - self.state[0])**2 + (y - self.state[1])**2)
-
-	def c1(X):
-		x,y = X
-		return desired_pose_function(x) - y
->>>>>>> 1c8bb3c68e8cdcb9853c1cbe95af857238a52937
 
     def get_offset_cost(self):
         # Get closest point from the curve
