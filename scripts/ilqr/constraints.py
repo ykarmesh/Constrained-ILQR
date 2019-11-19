@@ -52,31 +52,31 @@ class Constraints:
     def get_acceleration_cost(self): 
     	return np.matmul(np.matmul(self.args.w_acc*self.control.T*np.array([[1,0],[0,0]]))*self.control)
 
-	def get_yawrate_cost(self):
-		return np.mamtul(np.matmul(self.args.w_acc*self.contro.T*np.array([[0,0],[0,1]]))*self.control)
+    def get_yawrate_cost(self):
+        return np.mamtul(np.matmul(self.args.w_acc*self.contro.T*np.array([[0,0],[0,1]]))*self.control)
 
-	def desired_pose_function(self, x):
+    def desired_pose_function(self, x):
         return np.polyval(self.coeffs,x)
 
     def offset_obj(self, X):
-		x,y = X
-	 	return np.sqrt((x - self.state[0])**2 + (y - self.state[1])**2)
+        x,y = X
+        return np.sqrt((x - self.state[0])**2 + (y - self.state[1])**2)
 
-	def c1(X):
-		x,y = X
-	    return desired_pose_function(x) - y
+    def c1(X):
+        x,y = X
+        return desired_pose_function(x) - y
 
-	def get_offset_cost(self):
-		# Get closest point from the curve
-		X = fmin_cobyla(offset_obj, x0=[self.state[0],self.state[1]], cons=[c1])
-		x_r, y_r = X
-		state_diff = np.array([state[0]-x_r, state[1]-y_r])
-		Qk = np.array([[1,0,0],[0,1,0],[0,0,self.args.w_vel]])
+    def get_offset_cost(self):
+        # Get closest point from the curve
+        X = fmin_cobyla(offset_obj, x0=[self.state[0],self.state[1]], cons=[c1])
+        x_r, y_r = X
+        state_diff = np.array([state[0]-x_r, state[1]-y_r])
+        Qk = np.array([[1,0,0],[0,1,0],[0,0,self.args.w_vel]])
 
-		return np.matmul(np.matmul(state_diff.T*Q),state_diff)
+        return np.matmul(np.matmul(state_diff.T*Q),state_diff)
 
-	def get_velocity_cost(self):
-		return self.args.w_vel*(abs(self.state[2]) - self.desired_speed)
+    def get_velocity_cost(self):
+        return self.args.w_vel*(abs(self.state[2]) - self.desired_speed)
 
     def get_cost(self):
         """

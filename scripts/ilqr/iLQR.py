@@ -1,9 +1,9 @@
 import numpy as np 
 import scipy.integrate as integrate
 
-from vehicle_model import Model
-from local_planner import LocalPlanner
-from constraints import Constraints
+from ilqr.vehicle_model import Model
+from ilqr.local_planner import LocalPlanner
+from ilqr.constraints import Constraints
 
 
 class iLQR():

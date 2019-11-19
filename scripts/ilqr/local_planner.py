@@ -31,7 +31,7 @@ class LocalPlanner:
         local_wpts = [[global_wpts[i,0],global_wpts[i,1]] for i in range(closest_ind, closest_ind + self.args.number_of_local_wpts)]
         return local_wpts
 
-    def local_plan_function(self, global_wpts)
+    def local_plan_function(self, global_wpts):
         local_wpts = get_local_plan_wpts(global_wpts)
         x = local_wpts[:,0]
         y = local_wpts[:,1]
