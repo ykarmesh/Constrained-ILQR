@@ -37,6 +37,7 @@ from agents.navigation.local_planner import RoadOption
 from route_manipulation import interpolate_trajectory
 
 from arguments import add_arguments
+from simulator.low_level_controller import LowLevelController
 from ilqr.iLQR import iLQR
 
 class Carla_Interface():
@@ -147,12 +148,10 @@ class Carla_Interface():
         vehicle_velocity = self.ego_vehicle.get_velocity()
         vehicle_angular_velocity = self.ego_vehicle.get_angular_velocity()
 
-        ego_states = np.array([vehicle_transform.location.x,
-                               vehicle_transform.location.y,
-                               vehicle_velocity.x,
-                               vehicle_velocity.y,
-                               vehicle_transform.rotation.yaw,
-                               vehicle_angular_velocity.z])
+        ego_states = np.array([[vehicle_transform.location.x, vehicle_transform.location.y, vehicle_transform.location.z],
+                                [vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z],
+                                [vehicle_transform.rotation.roll, vehicle_transform.rotation.pitch, vehicle_transform.rotation.yaw],
+                                [vehicle_angular_velocity.x, vehicle_angular_velocity.y, vehicle_angular_velocity.z]])
         
         return ego_states
 
@@ -176,8 +175,9 @@ class Carla_Interface():
                 print(self.ego_vehicle.get_location())
 
     def create_ilqr_agent(self):
-        self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
-        self.navigation_agent.set_global_plan(self.plan_ilqr)
+        # self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
+        # self.navigation_agent.set_global_plan(self.plan_ilqr)
+        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control)
 
     def run_step_ilqr(self):
         assert self.navigation_agent != None, "Navigation Agent not initialized"

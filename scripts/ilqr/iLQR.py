@@ -7,12 +7,13 @@ from ilqr.constraints import Constraints
 
 
 class iLQR():
-    def __init__(self, args, obstacle_bb):
+    def __init__(self, args, obstacle_bb, verbose=False):
         self.args = args
         self.Ts = args.timestep
         self.N = args.horizon
         self.tol = args.tol
         self.obstacle_bb = obstacle_bb
+        self.verbose = verbose
         
         self.global_plan = None
         self.local_planner = LocalPlanner(args)
