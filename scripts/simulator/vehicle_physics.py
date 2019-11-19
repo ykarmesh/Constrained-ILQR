@@ -11,7 +11,7 @@ Tool functions to calculate vehicle physics
 
 import math
 
-from tf.transformations import euler_from_quaternion
+# from tf.transformations import euler_from_quaternion
 
 
 class VehiclePhysicsInfo():

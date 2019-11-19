@@ -38,7 +38,7 @@ from route_manipulation import interpolate_trajectory
 
 from arguments import add_arguments
 from simulator.low_level_controller import LowLevelController
-from scripts.iLQR import iLQR
+from ilqr.iLQR import iLQR
 
 class Carla_Interface():
     def __init__(self, args, town='Town01', verbose=False):
@@ -175,8 +175,9 @@ class Carla_Interface():
                 print(self.ego_vehicle.get_location())
 
     def create_ilqr_agent(self):
-        self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
-        self.navigation_agent.set_global_plan(self.plan_ilqr)
+        # self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
+        # self.navigation_agent.set_global_plan(self.plan_ilqr)
+        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control)
 
     def run_step_ilqr(self):
         assert self.navigation_agent != None, "Navigation Agent not initialized"
@@ -262,7 +263,7 @@ if __name__ == "__main__":
         argparser = argparse.ArgumentParser(description='CARLA CILQR')
         add_arguments(argparser)
         args = argparser.parse_args()
-        pdb.set_trace()
+        # pdb.set_trace()
         carla_interface = Carla_Interface(args)
         carla_interface.create_pid_agent()
         carla_interface.run_step_pid()

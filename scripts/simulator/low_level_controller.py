@@ -2,9 +2,9 @@ import sys
 import numpy as np
 
 import carla
-from simple_pid import PID
+# from simple_pid import PID
 
-from simulator.carla_control_physics import VehiclePhysicsInfo
+from simulator.vehicle_physics import VehiclePhysicsInfo
 
 
 class LowLevelController():
@@ -59,7 +59,7 @@ class LowLevelController():
         if self.verbose:
             if target_accel > self.carphysics.max_accel:
                 print("Max acceleration reached, clipping value")
-            else if target_accel < self.carphysics.max_decel
+            elif target_accel < self.carphysics.max_decel:
                 print("Max deceleration reached, clipping value")
 
         return accel
