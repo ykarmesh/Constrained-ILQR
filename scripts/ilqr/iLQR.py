@@ -1,9 +1,9 @@
 import numpy as np 
 import scipy.integrate as integrate
 
-from vehicle_model import Model
-from local_planner import LocalPlanner
-from constraints import Constraints
+from ilqr.vehicle_model import Model
+from ilqr.local_planner import LocalPlanner
+from ilqr.constraints import Constraints
 
 
 class iLQR():
@@ -30,6 +30,8 @@ class iLQR():
     def backward_pass(self):
         raise NotImplementedError
 
-    def run_step(self):
+    def run_step(self, ego_state, npc_states):
         assert self.global_plan is not None, "Set a global plan in iLQR before starting run_step"
+
+        self.local_planner.set_ego_state(ego_state)
         raise NotImplementedError
