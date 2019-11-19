@@ -27,7 +27,7 @@ if python_version.startswith('3'):
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 except IndexError:
-    pass
+    print("Cannot add the common path {}".format(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import carla
 from agents.navigation.basic_agent import BasicAgent
@@ -41,9 +41,9 @@ from simulator.low_level_controller import LowLevelController
 from ilqr.iLQR import iLQR
 
 class Carla_Interface():
-    def __init__(self, args, town='Town01', verbose=False):
+    def __init__(self, args, town='Town01'):
         self.args = args
-        self.verbose = verbose
+        self.verbose = args.verbose
         self.client = carla.Client('127.0.0.1', 2000)
         self.client.set_timeout(10.0)
 
@@ -183,8 +183,8 @@ class Carla_Interface():
         assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            control = self.navigation_agent.run_step()
-            self.ego_vehicle.apply_control(control)
+            control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
+            # self.ego_vehicle.apply_control(control)
 
 
     def spawn_npc(self):
@@ -263,10 +263,14 @@ if __name__ == "__main__":
         argparser = argparse.ArgumentParser(description='CARLA CILQR')
         add_arguments(argparser)
         args = argparser.parse_args()
-        # pdb.set_trace()
         carla_interface = Carla_Interface(args)
-        carla_interface.create_pid_agent()
-        carla_interface.run_step_pid()
+        if args.use_pid:
+            carla_interface.create_pid_agent()
+            carla_interface.run_step_pid()
+        else:
+            carla_interface.create_ilqr_agent()
+            carla_interface.run_step_ilqr()
+
     except KeyboardInterrupt:
         pass
     finally:

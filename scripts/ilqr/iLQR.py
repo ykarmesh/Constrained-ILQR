@@ -30,6 +30,8 @@ class iLQR():
     def backward_pass(self):
         raise NotImplementedError
 
-    def run_step(self):
+    def run_step(self, ego_state, npc_states):
         assert self.global_plan is not None, "Set a global plan in iLQR before starting run_step"
+
+        self.local_planner.set_ego_state(ego_state)
         raise NotImplementedError
