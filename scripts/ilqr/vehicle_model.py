@@ -3,10 +3,10 @@ import numpy as np
 class Model:
     def __init__(self, args):
         self.wheelbase = args.wheelbase
-        self.steer_min = args.steering_limits[0]
-        self.steer_max = args.steering_limits[1]
-        self.accel_min = args.acceleration_limits[0]
-        self.accel_max = args.acceleration_limits[1]
+        self.steer_min = args.steer_angle_limits[0]
+        self.steer_max = args.steer_angle_limits[1]
+        self.accel_min = args.acc_limits[0]
+        self.accel_max = args.acc_limits[1]
         self.Ts = args.timestep
         self.N = args.horizon
         

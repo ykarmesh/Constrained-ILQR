@@ -1,0 +1,50 @@
+VehiclePhysicsControl(
+
+# x=Engine RPM, y=Torque(Nm)
+torque_curve=[Vector2D(x=0, y=400), Vector2D(x=1315.47, y=654.445), Vector2D(x=5729.58, y=400)], 
+
+# The maximum RPM of the vehicle's engine.
+max_rpm=5729.58, 
+
+# The moment of inertia of the vehicle's engine.
+moi=1, 
+
+# Damping rate when the throttle is maximum.
+damping_rate_full_throttle=0.15, 
+
+# Damping rate when the throttle is zero with clutch engaged.
+damping_rate_zero_throttle_clutch_engaged=2, 
+
+# Damping rate when the throttle is zero with clutch disengaged.
+damping_rate_zero_throttle_clutch_disengaged=0.35, 
+
+# If true, the vehicle will have an automatic transmission.
+use_gear_autobox=True, 
+
+# Switching time between gears.
+gear_switch_time=0.5, 
+
+# The clutch strength of the vehicle. Measured in Kgm^2/s.
+clutch_strength=10, 
+
+# Vehicle Mass
+mass=5500, 
+
+# Drag coefficient of the vehicle's chassis.
+drag_coefficient=0.3, 
+
+# The center of mass of the vehicle.
+center_of_mass=Vector3D(x=60, y=0, z=-100),
+
+# Curve that indicates the maximum steering for a specific forward speed. 
+steering_curve=[Vector2D(x=0, y=1), Vector2D(x=20, y=0.9), Vector2D(x=60, y=0.8), Vector2D(x=120, y=0.7)], 
+
+# 0 - front left wheel, 1 - front right wheel, 2 - back left wheel, 3 - back right wheel
+wheels=[
+WheelPhysicsControl(tire_friction=3.5, damping_rate=0.25, steer_angle=70, disable_steering=False), 
+WheelPhysicsControl(tire_friction=3.5, damping_rate=0.25, steer_angle=70, disable_steering=False), 
+WheelPhysicsControl(tire_friction=3.5, damping_rate=0.25, steer_angle=0, disable_steering=False), 
+WheelPhysicsControl(tire_friction=3.5, damping_rate=0.25, steer_angle=0, disable_steering=False)
+]
+)
+

@@ -12,6 +12,7 @@ import random
 import sys
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pygame
 
@@ -38,6 +39,7 @@ from route_manipulation import interpolate_trajectory
 
 from arguments import add_arguments
 from simulator.low_level_controller import LowLevelController
+import simulator.transforms as transforms
 from ilqr.iLQR import iLQR
 
 class Carla_Interface():
@@ -100,6 +102,10 @@ class Carla_Interface():
         # Set spawn point(start) and goal point according to use case
         self.spawn_point = random.choice(self.spawn_points)
         print("\nSpawned vehicle at position: {}".format(self.spawn_point.location))
+
+        #temp
+        self.spawn_point.location = carla.Location(x=176.589493, y=133.239151, z=1.320625)
+
         self.ego_vehicle = self.world.try_spawn_actor(blueprint, self.spawn_point)
 
     def add_sensor(self, sensor_tag, image_width, image_height, transform, callback):
@@ -147,11 +153,18 @@ class Carla_Interface():
         vehicle_transform = self.ego_vehicle.get_transform()
         vehicle_velocity = self.ego_vehicle.get_velocity()
         vehicle_angular_velocity = self.ego_vehicle.get_angular_velocity()
+        vehicle_acceleration = self.ego_vehicle.get_acceleration()
+
+        rotated_velocity = transforms.carla_velocity_to_numpy_local_velocity(vehicle_velocity, vehicle_transform.rotation)
+        roll, pitch, yaw = transforms.carla_rotation_to_RPY(vehicle_transform.rotation)
+        angular_velocity = transforms.carla_angular_velocity_to_numpy_vector(vehicle_angular_velocity)
+        acceleration = transforms.carla_acceleration_to_numpy_local_velocity(vehicle_acceleration, vehicle_transform.rotation)
 
         ego_states = np.array([[vehicle_transform.location.x, vehicle_transform.location.y, vehicle_transform.location.z],
-                                [vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z],
-                                [vehicle_transform.rotation.roll, vehicle_transform.rotation.pitch, vehicle_transform.rotation.yaw],
-                                [vehicle_angular_velocity.x, vehicle_angular_velocity.y, vehicle_angular_velocity.z]])
+                                [        rotated_velocity[0],          rotated_velocity[1],          rotated_velocity[2]],
+                                [                       roll,                        pitch,                          yaw],
+                                [        angular_velocity[0],          angular_velocity[1],          angular_velocity[2]],
+                                [            acceleration[0],              acceleration[1],              acceleration[2]]])
         
         return ego_states
 
@@ -177,14 +190,21 @@ class Carla_Interface():
     def create_ilqr_agent(self):
         # self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
         # self.navigation_agent.set_global_plan(self.plan_ilqr)
-        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control)
+        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control(), verbose=True, plot=True)
 
     def run_step_ilqr(self):
-        assert self.navigation_agent != None, "Navigation Agent not initialized"
+        # assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
-            # self.ego_vehicle.apply_control(control)
+            # control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
+
+            control = self.low_level_controller.get_control(self.get_ego_states(), 2.0, 0.0)
+            self.ego_vehicle.apply_control(control)
+            time.sleep(0.05)
+
+            # render scene
+            pygame.display.flip()
+            
 
 
     def spawn_npc(self):
@@ -254,7 +274,7 @@ class Carla_Interface():
         print('\ndestroying %d sensors' % len(self.sensors))        
         for sensor in self.sensors.values():
             sensor.destroy()
-
+        
         pygame.quit()
 
 
@@ -272,7 +292,8 @@ if __name__ == "__main__":
             carla_interface.run_step_ilqr()
 
     except KeyboardInterrupt:
-        pass
+        carla_interface.low_level_controller.plot_pid()
+        
     finally:
         carla_interface.destroy()
         print('\ndone')

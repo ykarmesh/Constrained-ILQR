@@ -9,7 +9,7 @@ class LocalPlanner:
         self.args = args
         self.global_plan = None
         self.state = None
-        self.control = control
+        # self.control = control
     
     def set_current_state(self, ego_state):
         self.ego_state = ego_state
@@ -25,7 +25,7 @@ class LocalPlanner:
         closest_ind = np.sum((nodes - node)**2, axis=1)
         return np.argmin(closest_ind)
 
-    def get_local_plan_wpts(self,global_wpts):
+    def get_local_plan_wpts(self, global_wpts):
         """
         Creates a local plan based on the waypoints on the global planner 
         """

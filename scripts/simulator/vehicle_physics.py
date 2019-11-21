@@ -18,12 +18,12 @@ class VehiclePhysicsInfo():
     def __init__(self, vehicle_info):
         self.vehicle_info = vehicle_info
 
+        self.mass = self.get_vehicle_mass()
         self.max_steering_angle = self.get_vehicle_max_steering_angle()
         self.max_speed = self.get_vehicle_max_speed()
         self.max_accel = self.get_vehicle_max_acceleration()
-        self.min_decel = self.get_vehicle_max_deceleration()
-        self.engine_impedance = get_vehicle_lay_off_engine_acceleration()
-        self.mass = self.get_vehicle_mass()
+        self.max_decel = self.get_vehicle_max_deceleration()
+        self.engine_impedance = self.get_vehicle_lay_off_engine_acceleration()
 
         self.gravity = 9.81
         self.weight = self.mass * self.gravity
@@ -122,6 +122,7 @@ class VehiclePhysicsInfo():
 
         rolling_resistance_force = rolling_resistance_coefficient * normal_force
 
+        # deceleration due to rolling resistance 0.098
         return rolling_resistance_force
 
 
@@ -139,7 +140,7 @@ class VehiclePhysicsInfo():
         default_drag_reference_area = 2.37
         rho_air_25 = 1.184
 
-        if vehicle.info.drag_coefficient:
+        if self.vehicle_info.drag_coefficient:
             default_aerodynamic_drag_coefficient = self.vehicle_info.drag_coefficient
 
         # @todo currently not provided in vehicle_info
@@ -147,6 +148,7 @@ class VehiclePhysicsInfo():
 
         speed_squared = vehicle_status[1][0] * vehicle_status[1][0]
 
+        # default value 0.4209 * vel^2
         aerodynamic_drag_force = 0.5 * drag_area * rho_air_25 * speed_squared
         return aerodynamic_drag_force
 
