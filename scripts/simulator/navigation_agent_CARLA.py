@@ -198,7 +198,7 @@ class Carla_Interface():
         while True:
             # control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
 
-            control = self.low_level_controller.get_control(self.get_ego_states(), 2.0, 0.0)
+            control = self.low_level_controller.get_control(self.get_ego_states(), 2.1, 0.0)
             self.ego_vehicle.apply_control(control)
             time.sleep(0.05)
 

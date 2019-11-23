@@ -16,7 +16,7 @@ class LowLevelController():
         self.verbose = verbose
         self.plot = plot
         if plot:
-            self.current_accel = None
+            self.current_states = None
             self.desired_accel = None
 
     def get_control(self, vehicle_state, accel, steering_angle):
@@ -24,11 +24,11 @@ class LowLevelController():
         self.reverse = vehicle_state[1,0] < 0
 
         if self.plot:
-            if self.current_accel is None:
-                self.current_accel = np.array([[vehicle_state[4,0], vehicle_state[4,1]]])
+            if self.current_states is None:
+                self.current_states = np.array([[vehicle_state[1,0], vehicle_state[1,1], vehicle_state[4,0], vehicle_state[4,1]]])
                 self.desired_accel = np.array([[accel]])
             else:
-                self.current_accel = np.vstack((self.current_accel, np.array([[vehicle_state[4,0], vehicle_state[4,1]]])))
+                self.current_states = np.vstack((self.current_states, np.array([[vehicle_state[1,0], vehicle_state[1,1], vehicle_state[4,0], vehicle_state[4,1]]])))
                 self.desired_accel = np.vstack((self.desired_accel, np.array([[accel]])))
 
         control = carla.VehicleControl()
@@ -127,8 +127,12 @@ class LowLevelController():
 
     def plot_pid(self):
         if self.plot:
-            plt.plot(np.arange(len(self.current_accel)), self.current_accel[:,0], color='g', label='longitudinal_acc')
-            plt.plot(np.arange(len(self.current_accel)), self.current_accel[:,1], color='b', label='lateral_acc')
-            plt.plot(np.arange(len(self.current_accel)), self.desired_accel, color='r')
+            plt.figure(0)
+            plt.plot(np.arange(len(self.current_states)), self.current_states[:,2], color='g', label='longitudinal_acc')
+            plt.plot(np.arange(len(self.current_states)), self.current_states[:,3], color='b', label='lateral_acc')
+            plt.plot(np.arange(len(self.current_states)), self.desired_accel, color='r')
             plt.legend()
+            plt.figure(1)
+            plt.plot(np.arange(len(self.current_states)), self.current_states[:,0], color='g', label='longitudinal_vel')
+            plt.plot(np.arange(len(self.current_states)), self.current_states[:,1], color='b', label='lateral_vel')
             plt.show()
