@@ -18,7 +18,7 @@ class iLQR():
         self.global_plan = None
         self.local_planner = LocalPlanner(args)
         self.vehicle_model = Model(args)
-        self.constraints = Constraints(args)
+        # self.constraints = Constraints(args)
     
     def set_global_plan(self, global_plan):
         self.global_plan = global_plan
@@ -34,4 +34,5 @@ class iLQR():
         assert self.global_plan is not None, "Set a global plan in iLQR before starting run_step"
 
         self.local_planner.set_ego_state(ego_state)
-        raise NotImplementedError
+        path = self.local_planner.get_local_plan_waypoints()
+        return path, 0.0
