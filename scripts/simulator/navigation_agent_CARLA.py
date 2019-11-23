@@ -40,6 +40,7 @@ from route_manipulation import interpolate_trajectory
 from arguments import add_arguments
 from simulator.low_level_controller import LowLevelController
 import simulator.transforms as transforms
+import simulator.drawer_utils as drawer_utils
 from ilqr.iLQR import iLQR
 
 class Carla_Interface():
@@ -57,6 +58,7 @@ class Carla_Interface():
         # Get world and map from carla
         self.world = self.client.get_world()
         self.world_map = self.world.get_map()
+        self.debug = self.world.debug
 
         # Find valid points for spawning the vehicle
         self.spawn_points = self.world_map.get_spawn_points()
@@ -94,6 +96,7 @@ class Carla_Interface():
         cam_transform = carla.Transform(carla.Location(x=1, y=0, z=2.0), carla.Rotation(pitch=0, roll=0 ,yaw=0))
         self.add_sensor('rgb_front', w, h, cam_transform, self.image_callback)
 
+
     def spawn_ego_vehicle(self):
         # Get a random vehicle from world
         blueprint = random.choice(self.world.get_blueprint_library().filter('tesla'))
@@ -102,9 +105,6 @@ class Carla_Interface():
         # Set spawn point(start) and goal point according to use case
         self.spawn_point = random.choice(self.spawn_points)
         print("\nSpawned vehicle at position: {}".format(self.spawn_point.location))
-
-        #temp
-        self.spawn_point.location = carla.Location(x=176.589493, y=133.239151, z=1.320625)
 
         self.ego_vehicle = self.world.try_spawn_actor(blueprint, self.spawn_point)
 
@@ -181,6 +181,8 @@ class Carla_Interface():
             control = self.navigation_agent.run_step(debug=self.verbose)
             self.ego_vehicle.apply_control(control)
 
+            
+
             # render scene
             pygame.display.flip()
 
@@ -188,16 +190,17 @@ class Carla_Interface():
                 print(self.ego_vehicle.get_location())
 
     def create_ilqr_agent(self):
-        # self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
-        # self.navigation_agent.set_global_plan(self.plan_ilqr)
+        self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
+        self.navigation_agent.set_global_plan(self.plan_ilqr)
         self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control(), verbose=True, plot=True)
 
     def run_step_ilqr(self):
-        # assert self.navigation_agent != None, "Navigation Agent not initialized"
+        assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            # control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
+            local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
 
+            drawer_utils.draw_path(self.debug, local_plan)
             control = self.low_level_controller.get_control(self.get_ego_states(), 2.1, 0.0)
             self.ego_vehicle.apply_control(control)
             time.sleep(0.05)
