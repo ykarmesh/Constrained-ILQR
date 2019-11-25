@@ -11,6 +11,7 @@ import pdb
 import random
 import sys
 import time
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -99,14 +100,19 @@ class Carla_Interface():
 
     def spawn_ego_vehicle(self):
         # Get a random vehicle from world
-        blueprint = random.choice(self.world.get_blueprint_library().filter('tesla'))
+        blueprint = random.choice(self.world.get_blueprint_library().filter('grandtourer'))
         blueprint.set_attribute('role_name', 'hero')
 
         # Set spawn point(start) and goal point according to use case
         self.spawn_point = random.choice(self.spawn_points)
+        self.spawn_point.location = carla.Location(x=383.179871, y=-2.199161, z=1.322136)
+        self.spawn_point.rotation = carla.Rotation(roll=0.0, pitch=0.0, yaw=180)
         print("\nSpawned vehicle at position: {}".format(self.spawn_point.location))
 
         self.ego_vehicle = self.world.try_spawn_actor(blueprint, self.spawn_point)
+        physics = self.ego_vehicle.get_physics_control()
+        physics.gear_switch_time = 0.01
+        self.ego_vehicle.apply_physics_control(physics)
 
     def add_sensor(self, sensor_tag, image_width, image_height, transform, callback):
         bp = self.world.get_blueprint_library().find('sensor.camera.rgb')
@@ -192,7 +198,7 @@ class Carla_Interface():
     def create_ilqr_agent(self):
         self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
         self.navigation_agent.set_global_plan(self.plan_ilqr)
-        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control(), verbose=True, plot=True)
+        self.low_level_controller = LowLevelController(self.ego_vehicle.get_physics_control(), verbose=False, plot=True)
 
     def run_step_ilqr(self):
         assert self.navigation_agent != None, "Navigation Agent not initialized"
@@ -201,7 +207,7 @@ class Carla_Interface():
             local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
 
             drawer_utils.draw_path(self.debug, local_plan)
-            control = self.low_level_controller.get_control(self.get_ego_states(), 2.1, 0.0)
+            control = self.low_level_controller.get_control(self.get_ego_states(), 2.5, 0.0)
             self.ego_vehicle.apply_control(control)
             time.sleep(0.05)
 
