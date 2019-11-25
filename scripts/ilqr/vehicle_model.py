@@ -1,4 +1,7 @@
 import numpy as np
+# Add lambda functions
+cos = lambda a : np.cos(a)
+sin = lambda a : np.sin(a)
 
 class Model:
     def __init__(self, args):
@@ -11,31 +14,30 @@ class Model:
         self.N = args.horizon
         
     def forward_simulate(self, state, control):
-        next_state = np.array([[state[0] + cos(state[3])*(state[2]*self.Ts + (control[0]*Ts**2)/2)],
-                               [state[1] + sin(state[3])*(state[2]*self.Ts + (control[1]*Ts**2)/2)],
+        next_state = np.array([[state[0] + cos(state[3])*(state[2]*self.Ts + (control[0]*self.Ts**2)/2)],
+                               [state[1] + sin(state[3])*(state[2]*self.Ts + (control[1]*self.Ts**2)/2)],
                                [state[2] + control[0]*self.Ts],
                                [state[3] + control[1]*self.Ts]])
         return next_state
 
-    def get_A_matrix(self, theta, velocity, acceleration):
+    def get_A_matrix(self, theta, velocity_vals, acceleration_vals):
         """
         Returns the linearized 'A' matrix of the ego vehicle 
         model for all states in backward pass. 
         """
-        v = velocity
-        v_dot = acceleration
-        z = np.zeros((self.N))
-        A = np.array([[z, z, cos(theta), -(v + v_dot*self.Ts)*sin(theta)],
-                      [z, z, sin(theta),  (v + v_dot*self.Ts)*cos(theta)],
-                      [z, z,          z,                               z],
-                      [z, z,          z,                               z]])
+        # z = np.zeros((self.N))
+        v = np.reshape(velocity_vals,(1,1,self.N))
+        v_dot = np.reshape(acceleration_vals,(1,1,self.N))
+        A = np.eye(4) + np.array([[0, 0, cos(theta), -(v + v_dot*self.Ts)*sin(theta)],
+                        [0, 0, sin(theta),  (v + v_dot*self.Ts)*cos(theta)],
+                        [0, 0,          0,                               0],
+                        [0, 0,          0,                               0]])
         return A
 
     def get_B_matrix(self, theta):
-        z = np.zeros((self.N))
         o = np.ones((self.N))
-        B = np.array([[self.Ts*cos(theta), z],
-                      [self.Ts*cos(theta), z],
-                      [                 o, z],
-                      [                 z, o]])
+        B = np.array([[self.Ts**2*cos(theta), 0],
+                      [self.Ts**2*cos(theta), 0],
+                      [                 o, 0],
+                      [                 0, o]])
         return B

@@ -17,11 +17,6 @@ class Constraints:
 		self.coeffs = None
 		self.desired_speed = None
 	
-	def get_state_cost(self):
-		"""
-		Returns the state quadratic (Q matrix) and linear cost term (q matrix) for the trajectory
-		"""
-		return Q, q
 
 	def get_control_cost(self, state, control):
 		"""
@@ -89,6 +84,24 @@ class Constraints:
 		self.desired_speed = desired_speed
 
 		return Q, R, q, r
+
+	def get_state_cost_derivatives(self):
+		"""
+		Returns the first order and second order derivative of the value function wrt state
+		"""
+		# Offset in path derivative
+		X = fmin_cobyla(offset_obj, x0=[self.state[0],self.state[1]], cons=[c1])
+		x_r, y_r = X
+		dc_off = self.args.w_pos*2*np.array([self.state[0]-x_r,self.state[1]-y_r,0,0])
+		# Offset in velocity derivative 
+		dc_vel = self.args.w_vel*2*np.array([0,0,self.state[2]-self.args.desired_speed,0])
+		# Compute first order derivative TODO: add obstacles constraints
+		dl_dx = dc_off + dc_vel 
+		# Compute second order derivative
+		dl_dxx = self.args.w_pos*np.array([2,2,0,0]) + self.args.w_vel*np.array([0,0,2,0]) #TODO: add obstacles constraints
+		df_dx = 
+		return Q, q
+
 
 	def barrier_function(self, q1, q2, c, c_dot):
 		b = q1*np.exp(q2*c)

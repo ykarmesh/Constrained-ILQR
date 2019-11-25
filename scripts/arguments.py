@@ -16,12 +16,15 @@ def add_arguments(parser):
     # ___________________ Planning Parameters ___________________ #
     parser.add_argument('--number_of_local_wpts', type= int, default=10, help='Number of local waypoints')
     parser.add_argument('--use_pid', action="store_true", default=False, help='If we want to use PID instead of iLQR')
+    parser.add_argument('--desired_speed', type= float, default=2, help='Desired Speed')
 
 
     # ___________________ iLQR Parameters ___________________ #
     parser.add_argument('--timestep', type=float, default=0.01, help='Timestep at which forward and backward pass are done by iLQR')
     parser.add_argument('--horizon', type=int, default=100, help='Planning horizon for iLQR in num of steps (T=horizon*timesteps)')
     parser.add_argument('--tol', type=float, default=1e-4, help='iLQR tolerance parameter for convergence')
+    parser.add_argument('--max_iters', type=int, default=5, help='Total number of iterations for iLQR')
+    parser.add_argument('--num_states', type=int, default=4, help='Number of states in the model')
 
     # ___________________ Cost Parameters ___________________ #
 
