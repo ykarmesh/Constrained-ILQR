@@ -99,8 +99,7 @@ class Constraints:
 		dl_dx = dc_off + dc_vel 
 		# Compute second order derivative
 		dl_dxx = self.args.w_pos*np.array([2,2,0,0]) + self.args.w_vel*np.array([0,0,2,0]) #TODO: add obstacles constraints
-		df_dx = 
-		return Q, q
+		return dl_dx, dl_dxx
 
 
 	def barrier_function(self, q1, q2, c, c_dot):

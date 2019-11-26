@@ -20,18 +20,17 @@ class Model:
                                [state[3] + control[1]*self.Ts]])
         return next_state
 
-    def get_A_matrix(self, theta, velocity_vals, acceleration_vals):
+    def get_A_matrix(self, velocity_vals, theta, acceleration_vals):
         """
         Returns the linearized 'A' matrix of the ego vehicle 
         model for all states in backward pass. 
         """
-        # z = np.zeros((self.N))
-        v = np.reshape(velocity_vals,(1,1,self.N))
-        v_dot = np.reshape(acceleration_vals,(1,1,self.N))
-        A = np.eye(4) + np.array([[0, 0, cos(theta), -(v + v_dot*self.Ts)*sin(theta)],
-                        [0, 0, sin(theta),  (v + v_dot*self.Ts)*cos(theta)],
-                        [0, 0,          0,                               0],
-                        [0, 0,          0,                               0]])
+        z = np.zeros((self.N))
+        o = np.ones((self.N))
+        A = np.array([[o, z, cos(theta), -(v + v_dot*self.Ts)*sin(theta)],
+                      [z, o, sin(theta),  (v + v_dot*self.Ts)*cos(theta)],
+                      [z, z,          o,                               z],
+                      [z, z,          z,                               o]])
         return A
 
     def get_B_matrix(self, theta):

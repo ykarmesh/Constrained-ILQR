@@ -27,17 +27,32 @@ class iLQR():
     def forward_pass(self, start_state, control_seq):
         # ctrl_pts = self.args.number_of_local_wpts/self.args.timestep
         ctrl_pts = self.args.horizon # Maybe this
-        X = np.zeros((ctrl_pts, self.arg.num_states))
-        X[0] = start_state
+        X = np.zeros((self.args.num_states, ctrl_pts)) # State is 4 x ctrl_pts
+        X[:,0] = start_state
         # Do a forward rollout and get states at all control points
         for t in range(ctrl_pts-1):
-            X[t+1] = self.vehicle_model.forward_simulate(X[t],control_seq[t])
+            X[:,t+1] = self.vehicle_model.forward_simulate(X[t],control_seq[t])
 
         return X
 
     def backward_pass(self):
         # Find control sequence that minimizes Q-value function
-        # Precompute derivatives of value function w.r.t state and control
+        # Get derivatives of Q-function wrt to state and control
+        l_x, l_xx, l_u, l_ux, l_uu = get_Q_derivatives(X,control_seq,ref_traj) 
+        df_dx = self.vehicle_model.get_A_matrix(X[2,:],X[3,:],control_seq[0,:])
+        df_du = self.vehicle_model.get_B_matrix(X[3,:])
+        # Value function at final timestep is known
+        V_x = l_x[:,-1] 
+        V_xx = l_xx[:,:,-1]
+        # Run a backwards pass from N-1 control step
+        for i in range(self.args.horizon-1,-1,-1):
+            Q_x = l_x[:,i] + df_dx[:,:,i].T@V_x
+            Q_u = l_u[:,i] + df_du[:,:,i].T@V_x
+            Q_xx = l_xx + df_dx.T@V_xx@df_dx 
+            Q_ux = l_ux + df_du.T@V_xx@df_dx
+            Q_uu = l_uu + df_du.T@V_xx@df_du
+            
+
 
 
     def run_step(self, ego_state, npc_states):
@@ -55,7 +70,6 @@ class iLQR():
         flag_itr = True # iteration stop flag
         for itr in range(self.args.max_iters):
             while flag_itr:
-                # Get derivatives of Q-function wrt to state and control
-                l_x, l_xx, l_u, l_ux, l_uu, f_x, f_u = get_Q_derivatives(X,control_seq,ref_traj)
                 
+
 
