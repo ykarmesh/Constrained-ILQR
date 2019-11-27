@@ -25,6 +25,7 @@ def add_arguments(parser):
     parser.add_argument('--tol', type=float, default=1e-4, help='iLQR tolerance parameter for convergence')
     parser.add_argument('--max_iters', type=int, default=5, help='Total number of iterations for iLQR')
     parser.add_argument('--num_states', type=int, default=4, help='Number of states in the model')
+    parser.add_argument('--num_ctrls', type=int, default=2, help='Number of control inputs in the model')
 
     # ___________________ Cost Parameters ___________________ #
 

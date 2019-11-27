@@ -44,13 +44,29 @@ class iLQR():
         # Value function at final timestep is known
         V_x = l_x[:,-1] 
         V_xx = l_xx[:,:,-1]
+        # Allocate space for feedforward and feeback term
+        k = np.zeros((self.args.num_ctrls,self.args.horizon))
+        K = np.zeros((self.args.num_ctrls,self.args.num_states,self.args.horizon))
         # Run a backwards pass from N-1 control step
         for i in range(self.args.horizon-1,-1,-1):
-            Q_x = l_x[:,i] + df_dx[:,:,i].T@V_x
-            Q_u = l_u[:,i] + df_du[:,:,i].T@V_x
-            Q_xx = l_xx + df_dx.T@V_xx@df_dx 
-            Q_ux = l_ux + df_du.T@V_xx@df_dx
-            Q_uu = l_uu + df_du.T@V_xx@df_du
+            Q_x = l_x[:,i] + df_dx[:,:,i].T @ V_x
+            Q_u = l_u[:,i] + df_du[:,:,i].T @ V_x
+            Q_xx = l_xx[:,:,i] + df_dx[:,:,i].T @ V_xx@df_dx[:,:,i] 
+            Q_ux = l_ux[:,:,i] + df_du[:,:,i].T @ V_xx@df_dx[:,:,i]
+            Q_uu = l_uu[:,:,i] + df_du[:,:,i].T @ V_xx@df_du[:,:,i]
+            Q_uu_inv = np.linalg.pinv(Q_uu)
+            # Calculate feedforward and feedback terms
+            k[:,i] = -Q_uu_inv @ Q_u
+            K[:,:,i] = -Q_uu_inv @ Q_ux
+            # Update value function for next time step
+            V_x = Q_x - K[:,:,i].T @ Q_uu @ k[:,i]
+            V_xx = Q_xx - K[:,:,i].T @ Q_uu @ K[:,:,i]
+            # V_x  = Q_x + Q_ux.T @ k[:,i] + K[:,:,i].T @ Q_u + K[:, :, i).T @ Q_uu @ k[:, i] # Yanjun 
+            # V_xx = Q_xx + K[:,:,i].T @ Q_ux + Q_ux.T @ K[:,:,i] + K[:, :, i).T @ Q_uu @ K[:, :, i] # Yanjun
+        
+        return k,K
+
+
             
 
 
@@ -67,9 +83,9 @@ class iLQR():
     def get_optimal_control_seq(self, start_state, control_seq):
         X = self.forward_pass(start_state,control_seq)
         # Run iLQR for max iterations
-        flag_itr = True # iteration stop flag
         for itr in range(self.args.max_iters):
-            while flag_itr:
+            k, K = self.backward_pass()
+            
                 
 
 
