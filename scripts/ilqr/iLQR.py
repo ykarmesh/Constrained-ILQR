@@ -35,11 +35,11 @@ class iLQR():
 
         return X
 
-    def backward_pass(self):
+    def backward_pass(self,X,control_seq):
         # Find control sequence that minimizes Q-value function
         # Get derivatives of Q-function wrt to state and control
-        l_x, l_xx, l_u, l_ux, l_uu = get_Q_derivatives(X,control_seq,ref_traj) 
-        df_dx = self.vehicle_model.get_A_matrix(X[2,:],X[3,:],control_seq[0,:])
+        l_x, l_xx, l_u, l_ux, l_uu = get_Q_derivatives(X, control_seq, ref_traj) 
+        df_dx = self.vehicle_model.get_A_matrix(X[2,:], X[3,:], control_seq[0,:])
         df_du = self.vehicle_model.get_B_matrix(X[3,:])
         # Value function at final timestep is known
         V_x = l_x[:,-1] 
@@ -51,9 +51,9 @@ class iLQR():
         for i in range(self.args.horizon-1,-1,-1):
             Q_x = l_x[:,i] + df_dx[:,:,i].T @ V_x
             Q_u = l_u[:,i] + df_du[:,:,i].T @ V_x
-            Q_xx = l_xx[:,:,i] + df_dx[:,:,i].T @ V_xx@df_dx[:,:,i] 
-            Q_ux = l_ux[:,:,i] + df_du[:,:,i].T @ V_xx@df_dx[:,:,i]
-            Q_uu = l_uu[:,:,i] + df_du[:,:,i].T @ V_xx@df_du[:,:,i]
+            Q_xx = l_xx[:,:,i] + df_dx[:,:,i].T @ V_xx @ df_dx[:,:,i] 
+            Q_ux = l_ux[:,:,i] + df_du[:,:,i].T @ V_xx @ df_dx[:,:,i]
+            Q_uu = l_uu[:,:,i] + df_du[:,:,i].T @ V_xx @ df_du[:,:,i]
             Q_uu_inv = np.linalg.pinv(Q_uu)
             # Calculate feedforward and feedback terms
             k[:,i] = -Q_uu_inv @ Q_u
@@ -61,8 +61,8 @@ class iLQR():
             # Update value function for next time step
             V_x = Q_x - K[:,:,i].T @ Q_uu @ k[:,i]
             V_xx = Q_xx - K[:,:,i].T @ Q_uu @ K[:,:,i]
-            # V_x  = Q_x + Q_ux.T @ k[:,i] + K[:,:,i].T @ Q_u + K[:, :, i).T @ Q_uu @ k[:, i] # Yanjun 
-            # V_xx = Q_xx + K[:,:,i].T @ Q_ux + Q_ux.T @ K[:,:,i] + K[:, :, i).T @ Q_uu @ K[:, :, i] # Yanjun
+            # V_x  = Q_x + Q_ux.T @ k[:,i] + K[:,:,i].T @ Q_u + K[:, :, i).T @ Q_uu @ k[:, i] # Sergey
+            # V_xx = Q_xx + K[:,:,i].T @ Q_ux + Q_ux.T @ K[:,:,i] + K[:, :, i).T @ Q_uu @ K[:, :, i] # Sergey
         
         return k,K
 
@@ -79,13 +79,21 @@ class iLQR():
         return path, 0.0
 
     def run_iteration(self):
+        raise NotImplementedError
 
     def get_optimal_control_seq(self, start_state, control_seq):
-        X = self.forward_pass(start_state,control_seq)
+        X = self.forward_pass(start_state, control_seq)
         # Run iLQR for max iterations
         for itr in range(self.args.max_iters):
-            k, K = self.backward_pass()
-            
+            k, K = self.backward_pass(X, control_seq)
+            # Get control values at control points and new states
+            # again by a forward rollout
+            X_new = np.zeros((self.args.num_states, self.args.horizon))
+            X_new[:, 0] = start_state
+            U_opt = np.zeros((self.args.num_ctrls, self.args.horizon))
+            for i in range(self.args.horizon):
+                U_opt[:, i] = control_seq[:, i] + k[:, i] + K[:, :, i] @ (X_new[:, i] - X[:, i])
+                X_new[:, i+1] = self.vehicle_model.forward_simulate(X_new[:, i], U_opt[:, i])
                 
 
 
