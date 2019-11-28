@@ -38,7 +38,7 @@ class iLQR():
     def backward_pass(self):
         # Find control sequence that minimizes Q-value function
         # Get derivatives of Q-function wrt to state and control
-        l_x, l_xx, l_u, l_ux, l_uu = get_Q_derivatives(X,control_seq,ref_traj) 
+        l_x, l_xx, l_u, l_uu =  get_cost_derivatives(X,control_seq,ref_traj) 
         df_dx = self.vehicle_model.get_A_matrix(X[2,:],X[3,:],control_seq[0,:])
         df_du = self.vehicle_model.get_B_matrix(X[3,:])
         # Value function at final timestep is known

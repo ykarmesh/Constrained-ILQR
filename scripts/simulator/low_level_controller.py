@@ -40,10 +40,19 @@ class LowLevelController():
 
         if self.plot:
             if self.current_states is None:
-                self.current_states = np.array([[vehicle_state[1,0], vehicle_state[1,1], vehicle_state[4,0], vehicle_state[4,1], self.gear]])
+                self.current_states = np.array([[vehicle_state[1,0], 
+                                                 vehicle_state[1,1], 
+                                                 vehicle_state[4,0], 
+                                                 vehicle_state[4,1], 
+                                                 self.gear]])
                 self.desired_accel = np.array([[accel]])
             else:
-                self.current_states = np.vstack((self.current_states, np.array([[vehicle_state[1,0], vehicle_state[1,1], vehicle_state[4,0], vehicle_state[4,1], self.gear]])))
+                self.current_states = np.vstack((self.current_states, 
+                                                 np.array([[vehicle_state[1,0], 
+                                                            vehicle_state[1,1], 
+                                                            vehicle_state[4,0], 
+                                                            vehicle_state[4,1], 
+                                                            self.gear]])))
                 self.desired_accel = np.vstack((self.desired_accel, np.array([[accel]])))
 
         self.change_gear()
