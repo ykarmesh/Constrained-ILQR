@@ -3,7 +3,7 @@ import math
 from scipy.optimize import fmin_cobyla
 
 class Constraints:
-	def __init__(self, args, state, control, poly_coeffs, desired_speed):
+	def __init__(self, args):
 		self.args = args
 		self.control_cost = np.array([[self.args.w_acc,                   0],
 									  [              0, self.args.w_yawrate]])
@@ -12,10 +12,8 @@ class Constraints:
 									[0, self.args.w_pos, 0, 0],
 									[0, 0, self.args.w_vel, 0],
 									[0, 0, 0,               0]])
-		self.state = None
-		self.control = None
 		self.coeffs = None
-		self.desired_speed = None
+
 	
 
 	def get_control_cost_derivatives(self, state, control):
@@ -60,7 +58,7 @@ class Constraints:
 
 		return b, b_dot, b_ddot
 
-		def get_cost_derivatives(self, state, control):
+	def get_cost_derivatives(self, state, control):
 		"""
 		Returns the different cost terms for the trajectory
 		This is the main function which calls all the other functions 
@@ -81,20 +79,23 @@ class Constraints:
 
 		for i in range(len(self.args.horizon)):
 			# Offset in path derivative
-			# X = fmin_cobyla(offset_obj, x0=[state[0], state[1]], cons=[c1])
-			# x_r, y_r = X
-			# dc_off = self.args.w_pos*2*np.array([state[0]-x_r, state[1]-y_r,0,0])
-			# # Offset in velocity derivative 
-			# dc_vel = self.args.w_vel*2*np.array([0,0,state[2]-self.args.desired_speed,0])
-			# # Compute first order derivative TODO: add obstacles constraints
-			# dl_dx = dc_off + dc_vel 
+			X = fmin_cobyla(offset_obj, x0=[state[0], state[1]], cons=[c1])
+			x_r, y_r = X
+			dc_off = self.args.w_pos*2*np.array([state[0]-x_r, state[1]-y_r, 0, 0])
+			# Offset in velocity derivative 
+			dc_vel = self.args.w_vel*2*np.array([0,0,state[2]-self.args.desired_speed,0])
+			# Compute first order derivative TODO: add obstacles constraints
+			dl_dx = dc_off + dc_vel 
 			# Compute second order derivative
 			l_xx_i = self.state_cost #TODO: add obstacles constraints
 
-			l_xx[:, :, self.args.horizon] = l_xx_i
+			l_xx[:, :, i] = l_xx_i
 
 		return l_x, l_xx
 
+	"""
+	Unused stuff
+	"""
 	# def get_acceleration_cost(self): 
 	# 	return np.matmul(np.matmul(self.args.w_acc*self.control.T*np.array([[1,0],[0,0]]))*self.control)
 

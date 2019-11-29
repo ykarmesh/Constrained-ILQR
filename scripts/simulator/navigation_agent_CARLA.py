@@ -167,10 +167,10 @@ class Carla_Interface():
         acceleration = transforms.carla_acceleration_to_numpy_local_velocity(vehicle_acceleration, vehicle_transform.rotation)
 
         ego_states = np.array([[vehicle_transform.location.x, vehicle_transform.location.y, vehicle_transform.location.z],
-                                [        rotated_velocity[0],          rotated_velocity[1],          rotated_velocity[2]],
-                                [                       roll,                        pitch,                          yaw],
-                                [        angular_velocity[0],          angular_velocity[1],          angular_velocity[2]],
-                                [            acceleration[0],              acceleration[1],              acceleration[2]]])
+                               [         rotated_velocity[0],          rotated_velocity[1],          rotated_velocity[2]],
+                               [                        roll,                        pitch,                          yaw],
+                               [         angular_velocity[0],          angular_velocity[1],          angular_velocity[2]],
+                               [             acceleration[0],              acceleration[1],              acceleration[2]]])
         
         return ego_states
 

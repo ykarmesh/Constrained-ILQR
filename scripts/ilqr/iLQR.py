@@ -18,35 +18,40 @@ class iLQR():
         self.global_plan = None
         self.local_planner = LocalPlanner(args)
         self.vehicle_model = Model(args)
-        # self.constraints = Constraints(args)
+        self.constraints = Constraints(args)
+        
+        # initial nominal trajectory
+        self.control_seq = np.zeros((self.args.num_ctrls, self.args.horizon))
+        self.control_seq[0, :] = np.ones((self.args.horizon)) * 0.1
+
     
     def set_global_plan(self, global_plan):
         self.global_plan = global_plan
         self.local_planner.set_global_planner(self.global_plan)
 
-    def forward_pass(self, start_state, control_seq):
-        # ctrl_pts = self.args.number_of_local_wpts/self.args.timestep
-        ctrl_pts = self.args.horizon # Maybe this
-        X = np.zeros((self.args.num_states, ctrl_pts)) # State is 4 x ctrl_pts
-        X[:,0] = start_state
+    def forward_pass(self, X, U, k, K):
+        X_new = np.zeros((self.args.num_states, self.args.horizon))
+        X_new[:, 0] = X[:, 0]
+        U_new = np.zeros((self.args.num_ctrls, self.args.horizon))
         # Do a forward rollout and get states at all control points
-        for t in range(ctrl_pts-1):
-            X[:,t+1] = self.vehicle_model.forward_simulate(X[t],control_seq[t])
+        for i in range(self.args.horizon):
+            U_new[:, i] = U[:, i] + k[:, i] + K[:, :, i] @ (X_new[:, i] - X[:, i])
+            X_new[:, i+1] = self.vehicle_model.forward_simulate(X_new[:, i], U_new[:, i])
 
-        return X
+        return X_new, U_new
 
-    def backward_pass(self,X,control_seq):
+    def backward_pass(self, X, U):
         # Find control sequence that minimizes Q-value function
         # Get derivatives of Q-function wrt to state and control
-        l_x, l_xx, l_u, l_uu =  get_cost_derivatives(X,control_seq,ref_traj) 
-        df_dx = self.vehicle_model.get_A_matrix(X[2,:],X[3,:],control_seq[0,:])
+        l_x, l_xx, l_u, l_uu = self.constraints.get_cost_derivatives(X, U, ref_traj) 
+        df_dx = self.vehicle_model.get_A_matrix(X[2,:], X[3,:], U[0,:])
         df_du = self.vehicle_model.get_B_matrix(X[3,:])
         # Value function at final timestep is known
         V_x = l_x[:,-1] 
         V_xx = l_xx[:,:,-1]
         # Allocate space for feedforward and feeback term
-        k = np.zeros((self.args.num_ctrls,self.args.horizon))
-        K = np.zeros((self.args.num_ctrls,self.args.num_states,self.args.horizon))
+        k = np.zeros((self.args.num_ctrls, self.args.horizon))
+        K = np.zeros((self.args.num_ctrls, self.args.num_states, self.args.horizon))
         # Run a backwards pass from N-1 control step
         for i in range(self.args.horizon-1,-1,-1):
             Q_x = l_x[:,i] + df_dx[:,:,i].T @ V_x
@@ -64,10 +69,7 @@ class iLQR():
             # V_x  = Q_x + Q_ux.T @ k[:,i] + K[:,:,i].T @ Q_u + K[:, :, i).T @ Q_uu @ k[:, i] # Sergey
             # V_xx = Q_xx + K[:,:,i].T @ Q_ux + Q_ux.T @ K[:,:,i] + K[:, :, i).T @ Q_uu @ K[:, :, i] # Sergey
         
-        return k,K
-
-
-            
+        return k, K
 
 
 
@@ -76,24 +78,22 @@ class iLQR():
 
         self.local_planner.set_ego_state(ego_state)
         path = self.local_planner.get_local_plan_waypoints()
-        return path, 0.0
 
-    def run_iteration(self):
-        raise NotImplementedError
+        X_0 = np.array([ego_state[0][0], ego_state[0][1], ego_state[1][0], ego_state[2][2]])
+        U = self.get_optimal_control_seq(X_0, self.control_seq)
+        self.control_seq = U
+        return path, U[:, 0]
 
-    def get_optimal_control_seq(self, start_state, control_seq):
-        X = self.forward_pass(start_state, control_seq)
+    def get_optimal_control_seq(self, X_0, U):
+        X = self.forward_pass(X_0, U)
         # Run iLQR for max iterations
         for itr in range(self.args.max_iters):
-            k, K = self.backward_pass(X, control_seq)
+            k, K = self.backward_pass(X, U)
             # Get control values at control points and new states
             # again by a forward rollout
-            X_new = np.zeros((self.args.num_states, self.args.horizon))
-            X_new[:, 0] = start_state
-            U_opt = np.zeros((self.args.num_ctrls, self.args.horizon))
-            for i in range(self.args.horizon):
-                U_opt[:, i] = control_seq[:, i] + k[:, i] + K[:, :, i] @ (X_new[:, i] - X[:, i])
-                X_new[:, i+1] = self.vehicle_model.forward_simulate(X_new[:, i], U_opt[:, i])
-                
+            X_new, U_new = self.forward_pass(X, U, k, K)
+        
+        return U
+        
 
 
