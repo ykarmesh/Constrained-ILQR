@@ -43,7 +43,7 @@ class LocalPlanner:
         coeffs = np.polyfit(x, y, 3)
         return coeffs
 
-    def get_local_plan_waypoints(self):
+    def get_local_plan(self):
         local_wpts = self.get_local_wpts()
         x = local_wpts[:,0]
         y = local_wpts[:,1]
@@ -52,7 +52,7 @@ class LocalPlanner:
 
         warnings.simplefilter('ignore', np.RankWarning)
         
-        return np.vstack((x, new_y)).T
+        return np.vstack((x, new_y)).T, coeffs
 
     def get_orientation(self):
         """

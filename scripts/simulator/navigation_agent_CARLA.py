@@ -56,10 +56,16 @@ class Carla_Interface():
             self.client.load_world(town)
             time.sleep(10.0)
     
+        self.fps = 1.0/self.args.fps
         # Get world and map from carla
         self.world = self.client.get_world()
         self.world_map = self.world.get_map()
         self.debug = self.world.debug
+
+        settings = self.world.get_settings()
+        settings.fixed_delta_seconds = self.fps
+        settings.synchronous_mode = True
+        self.world.apply_settings(settings)
 
         # Find valid points for spawning the vehicle
         self.spawn_points = self.world_map.get_spawn_points()
@@ -119,7 +125,7 @@ class Carla_Interface():
         bp.set_attribute('image_size_x', str(image_width))
         bp.set_attribute('image_size_y', str(image_height))
         bp.set_attribute('fov', str(100))
-        bp.set_attribute('sensor_tick', str(0.0333))
+        bp.set_attribute('sensor_tick', str(self.fps))
 
         self.sensors[sensor_tag] = self.world.spawn_actor(bp, transform, self.ego_vehicle)
         self.sensors[sensor_tag].listen(lambda image: callback(sensor_tag, image))
@@ -187,8 +193,6 @@ class Carla_Interface():
             control = self.navigation_agent.run_step(debug=self.verbose)
             self.ego_vehicle.apply_control(control)
 
-            
-
             # render scene
             pygame.display.flip()
 
@@ -207,9 +211,11 @@ class Carla_Interface():
             local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
 
             drawer_utils.draw_path(self.debug, local_plan)
-            control = self.low_level_controller.get_control(self.get_ego_states(), 2.5, 0.0)
+            print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
+            control = self.low_level_controller.get_control(self.get_ego_states(), control[0], control[1])
             self.ego_vehicle.apply_control(control)
-            time.sleep(0.05)
+            # time.sleep(0.05)
+            self.world.tick()
 
             # render scene
             pygame.display.flip()
@@ -274,6 +280,10 @@ class Carla_Interface():
         return bbs
 
     def destroy(self):
+        settings = self.world.get_settings()
+        settings.synchronous_mode = False
+        self.world.apply_settings(settings)
+
         print('\ndestorying ego vehicle')
         self.ego_vehicle.destroy()
 
