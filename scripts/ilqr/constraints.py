@@ -9,7 +9,7 @@ class Constraints:
 		self.control_cost = np.array([[self.args.w_acc,                   0],
 									  [              0, self.args.w_yawrate]])
 
-		self.state_cost = np.array([[self.args.w_pos, 0, 0, 0],
+		self.state_cost = 2*np.array([[self.args.w_pos, 0, 0, 0],
 									[0, self.args.w_pos, 0, 0],
 									[0, 0, self.args.w_vel, 0],
 									[0, 0, 0,               0]])

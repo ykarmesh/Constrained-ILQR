@@ -91,10 +91,13 @@ class iLQR():
 
         X_0 = np.array([ego_state[0][0], ego_state[0][1], ego_state[1][0], ego_state[2][2]])
         
-        U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0])
+        X, U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0])
+        X = X[:2, ::int(self.args.horizon/10)].T
+        # X = X[:2]
+        # print(X)
         self.control_seq = U
         self.plot(U)
-        return ref_traj, self.filter_control(U[:, 0],  ego_state[1][0])
+        return X, ref_traj, self.filter_control(U[:, 0],  ego_state[1][0])
 
     def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan):
         # pdb.set_trace()
@@ -104,9 +107,9 @@ class iLQR():
             k, K = self.backward_pass(X, U, poly_coeff, x_local_plan)
             # Get control values at control points and new states
             # again by a forward rollout
-            X_new, U_new = self.forward_pass(X, U, k, K)
+            X, U = self.forward_pass(X, U, k, K)
         
-        return U_new
+        return X, U
 
     def filter_control(self, U, velocity):
         U[1] = math.atan2(self.args.wheelbase*U[1],velocity)

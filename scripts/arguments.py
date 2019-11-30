@@ -20,7 +20,7 @@ def add_arguments(parser):
 
 
     # ___________________ iLQR Parameters ___________________ #
-    parser.add_argument('--timestep', type=float, default=0.01, help='Timestep at which forward and backward pass are done by iLQR')
+    parser.add_argument('--timestep', type=float, default=0.1, help='Timestep at which forward and backward pass are done by iLQR')
     parser.add_argument('--horizon', type=int, default=100, help='Planning horizon for iLQR in num of steps (T=horizon*timesteps)')
     parser.add_argument('--tol', type=float, default=1e-4, help='iLQR tolerance parameter for convergence')
     parser.add_argument('--max_iters', type=int, default=20, help='Total number of iterations for iLQR')
@@ -46,7 +46,7 @@ def add_arguments(parser):
 
 
     # ___________________ Constraint Parameters ___________________ #
-    parser.add_argument('--acc_limits', nargs="*", type=float, default=[-5.5, 3.0], help="Acceleration limits for the ego vehicle (min,max)")
+    parser.add_argument('--acc_limits', nargs="*", type=float, default=[-5.5, 2.0], help="Acceleration limits for the ego vehicle (min,max)")
     parser.add_argument('--steer_angle_limits', nargs="*", type=float, default=[-1.0, 1.0], help="Steering Angle limits (rads) for the ego vehicle (min,max)")
 
 

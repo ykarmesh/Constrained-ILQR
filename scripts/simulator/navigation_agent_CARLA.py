@@ -44,6 +44,9 @@ import simulator.transforms as transforms
 import simulator.drawer_utils as drawer_utils
 from ilqr.iLQR import iLQR
 
+# For displaying desired path
+green = carla.Color(0, 255, 0)
+
 class Carla_Interface():
     def __init__(self, args, town='Town01'):
         self.args = args
@@ -208,9 +211,12 @@ class Carla_Interface():
         assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
-
-            drawer_utils.draw_path(self.debug, local_plan)
+            desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
+            # print(desired_path)
+            # print("-------------------------")
+            # print(local_plan)
+            # drawer_utils.draw_path(self.debug, local_plan)
+            drawer_utils.draw_path(self.debug, desired_path, green, lt=0.05, thickness=0.05)
             print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
             control = self.low_level_controller.get_control(self.get_ego_states(), control[0], control[1])
             self.ego_vehicle.apply_control(control)

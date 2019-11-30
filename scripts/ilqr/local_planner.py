@@ -9,7 +9,7 @@ class LocalPlanner:
     def __init__(self, args):
         self.args = args
         self.global_plan = None
-        self.state = None
+        self.ego_state = None
         # self.control = control
     
     def set_ego_state(self, ego_state):
@@ -35,13 +35,6 @@ class LocalPlanner:
         closest_ind = self.closest_node([self.ego_state[0,0],self.ego_state[0,1]]) 
         # local_wpts = [[global_wpts[i,0],global_wpts[i,1]] for i in range(closest_ind, closest_ind + self.args.number_of_local_wpts)]
         return self.global_plan[closest_ind:closest_ind+self.args.number_of_local_wpts]
-
-    def get_local_plan_coeff(self):
-        local_wpts = self.get_local_wpts()
-        x = local_wpts[:,0]
-        y = local_wpts[:,1]
-        coeffs = np.polyfit(x, y, 3)
-        return coeffs
 
     def get_local_plan(self):
         local_wpts = self.get_local_wpts()

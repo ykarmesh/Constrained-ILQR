@@ -89,9 +89,9 @@ class LowLevelController():
         set target sterring angle
         """
         steering_angle = np.clip(target_steering_angle, -self.carphysics.max_steering_angle, self.carphysics.max_steering_angle)
-
-        if abs(steering_angle) > self.carphysics.max_steering_angle and self.verbose:
+        if abs(target_steering_angle) > self.carphysics.max_steering_angle and self.verbose:
             print("Max steering angle reached, clipping value")
+
 
         return steering_angle
 

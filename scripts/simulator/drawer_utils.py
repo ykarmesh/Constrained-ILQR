@@ -29,12 +29,12 @@ def draw_transform(debug, trans, col=carla.Color(255, 0, 0), lt=-1):
         z=trans.location.z + math.sin(pitch_in_rad))
     debug.draw_arrow(trans.location, p1, thickness=0.05, arrow_size=1.0, color=col, life_time=lt)
 
-def draw_path(debug, path, color=carla.Color(255, 0, 0), lt=1):
+def draw_path(debug, path, color=carla.Color(255, 0, 0), lt=1, thickness=0.1):
     for i in range(len(path)-1):
         w0 = carla.Location(x=path[i, 0], y=path[i, 1], z=0.5)
         w1 = carla.Location(x=path[i+1, 0], y=path[i+1, 1], z=0.5)
 
-        debug.draw_line(w0, w1, thickness=0.1, color=color, life_time=lt, persistent_lines=False)
+        debug.draw_line(w0, w1, thickness=thickness, color=color, life_time=lt, persistent_lines=False)
         debug.draw_point(w1 - carla.Location(z=0.25), 0.1, color, lt, False)
 
 def draw_waypoint_union(debug, w0, w1, color=carla.Color(255, 0, 0), lt=5):
