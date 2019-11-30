@@ -98,6 +98,25 @@ class Constraints:
 
 		return l_x, l_xx
 
+	def get_total_cost(self, state, control_seq, poly_coeffs, x_local_plan):
+		"""
+		Returns cost of a sequence
+		"""
+		J = 0
+		for i in range(self.args.horizon):
+			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
+			ref_state = np.array([x_r,y_r,self.args.desired_speed,0]) # Theta does not matter
+			Qc_off = np.array([[self.args.w_pos,0,0,0],[0,self.args.w_pos,0,0],[0,0,0,0],[0,0,0,0]])
+			state_diff = state[:,i]-ref_state
+			c_off = state_diff.T @ Qc_off @ state_diff
+			Qc_vel = np.array([[0,0,0,0],[0,0,0,0],[0,0,self.args.w_vel,0],[0,0,0,0]])
+			c_vel = state_diff.T @ Qc_vel @ state_diff
+			c_ctrl = control_seq[:,i].T @ self.control_cost @ control_seq[:,i]
+			J = c_off + c_vel + c_ctrl 	# TODO:: Add cost due to constraints
+		
+		return J
+
+
 	# def get_acceleration_cost(self): 
 	# 	return np.matmul(np.matmul(self.args.w_acc*self.control.T*np.array([[1,0],[0,0]]))*self.control)
 

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import pdb
+import sys
 
 from ilqr.vehicle_model import Model
 from ilqr.local_planner import LocalPlanner
@@ -99,14 +100,19 @@ class iLQR():
     def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan):
         # pdb.set_trace()
         X = self.get_nominal_trajectory(X_0, U)
+        J_old = sys.float_info.max
         # Run iLQR for max iterations
         for itr in range(self.args.max_iters):
             k, K = self.backward_pass(X, U, poly_coeff, x_local_plan)
             # Get control values at control points and new states
             # again by a forward rollout
-            X_new, U_new = self.forward_pass(X, U, k, K)
-        
-        return U_new
+            X, U = self.forward_pass(X, U, k, K)
+            J_new = self.constraints.get_total_cost(X, U, poly_coeff, x_local_plan)
+            if (abs(J_old - J_new) < self.args.tol):
+                break
+            J_old = J_new
+            
+        return U
 
     def filter_control(self, U, velocity):
         U[1] = math.atan2(self.args.wheelbase*U[1],velocity)
