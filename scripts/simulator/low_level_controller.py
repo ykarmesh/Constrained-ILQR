@@ -172,15 +172,13 @@ class LowLevelController():
 
     def plot_pid(self):
         if self.plot:
-            plt.figure(0)
+            plt.figure(1)
             plt.plot(np.arange(len(self.current_states)), self.current_states[:,2], color='g', label='longitudinal_acc')
             plt.plot(np.arange(len(self.current_states)), self.current_states[:,3], color='b', label='lateral_acc')
             plt.plot(np.arange(len(self.current_states)), self.desired_accel, color='r')
             plt.legend()
             
-            plt.figure(1)
-
-            # pdb.set_trace()
+            plt.figure(2)
             gear_ratios = np.array([self.gear_info[int(i)-1].ratio for i in self.current_states[:,4]]) #
             rpm_ratio = self.GR*gear_ratios*self.current_states[:,0]/(self.Rad*self.max_rpm)
             plt.plot(np.arange(len(self.current_states)), rpm_ratio, color='g', label='longitudinal_vel')
@@ -188,7 +186,7 @@ class LowLevelController():
             plt.legend()
 
 
-            plt.figure(2)
+            plt.figure(3)
             self.controls = np.array(self.controls)
             plt.plot(np.arange(len(self.controls)), self.controls[:,0], color='g', label='Throttle')
             plt.plot(np.arange(len(self.controls)), self.controls[:,1], color='b', label='Brake')

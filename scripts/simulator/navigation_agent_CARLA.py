@@ -44,9 +44,6 @@ import simulator.transforms as transforms
 import simulator.drawer_utils as drawer_utils
 from ilqr.iLQR import iLQR
 
-# For displaying desired path
-green = carla.Color(0, 255, 0)
-
 class Carla_Interface():
     def __init__(self, args, town='Town01'):
         self.args = args
@@ -59,14 +56,14 @@ class Carla_Interface():
             self.client.load_world(town)
             time.sleep(10.0)
     
-        self.fps = 1.0/self.args.fps
+        self.delta_secs = 1.0/self.args.fps
         # Get world and map from carla
         self.world = self.client.get_world()
         self.world_map = self.world.get_map()
         self.debug = self.world.debug
 
         settings = self.world.get_settings()
-        settings.fixed_delta_seconds = self.fps
+        settings.fixed_delta_seconds = self.delta_secs
         settings.synchronous_mode = True
         self.world.apply_settings(settings)
 
@@ -114,6 +111,8 @@ class Carla_Interface():
 
         # Set spawn point(start) and goal point according to use case
         self.spawn_point = random.choice(self.spawn_points)
+
+        # Temp to spawn vehicle at same point
         self.spawn_point.location = carla.Location(x=383.179871, y=-2.199161, z=1.322136)
         self.spawn_point.rotation = carla.Rotation(roll=0.0, pitch=0.0, yaw=180)
         print("\nSpawned vehicle at position: {}".format(self.spawn_point.location))
@@ -122,13 +121,14 @@ class Carla_Interface():
         physics = self.ego_vehicle.get_physics_control()
         physics.gear_switch_time = 0.01
         self.ego_vehicle.apply_physics_control(physics)
+        self.world.tick()
 
     def add_sensor(self, sensor_tag, image_width, image_height, transform, callback):
         bp = self.world.get_blueprint_library().find('sensor.camera.rgb')
         bp.set_attribute('image_size_x', str(image_width))
         bp.set_attribute('image_size_y', str(image_height))
         bp.set_attribute('fov', str(100))
-        bp.set_attribute('sensor_tick', str(self.fps))
+        bp.set_attribute('sensor_tick', str(self.delta_secs))
 
         self.sensors[sensor_tag] = self.world.spawn_actor(bp, transform, self.ego_vehicle)
         self.sensors[sensor_tag].listen(lambda image: callback(sensor_tag, image))
@@ -180,7 +180,6 @@ class Carla_Interface():
                                [                        roll,                        pitch,                          yaw],
                                [         angular_velocity[0],          angular_velocity[1],          angular_velocity[2]],
                                [             acceleration[0],              acceleration[1],              acceleration[2]]])
-        
         return ego_states
 
     def create_pid_agent(self, target_speed=20):
@@ -211,16 +210,16 @@ class Carla_Interface():
         assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
-            # print(desired_path)
-            # print("-------------------------")
-            # print(local_plan)
-            # drawer_utils.draw_path(self.debug, local_plan)
-            drawer_utils.draw_path(self.debug, desired_path, green, lt=0.05, thickness=0.05)
+            ego_state = self.get_ego_states()
+            desired_path, local_plan, control = self.navigation_agent.run_step(ego_state, self.get_npc_state())
+            
+            drawer_utils.draw_path(self.debug, local_plan, drawer_utils.red, lt=0.05, thickness=0.08)
+            drawer_utils.draw_path(self.debug, desired_path, drawer_utils.green, lt=0.05, thickness=0.05)
             print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
-            control = self.low_level_controller.get_control(self.get_ego_states(), control[0], control[1])
+
+            control = self.low_level_controller.get_control(ego_state, control[0], control[1])
             self.ego_vehicle.apply_control(control)
-            # time.sleep(0.05)
+
             self.world.tick()
 
             # render scene

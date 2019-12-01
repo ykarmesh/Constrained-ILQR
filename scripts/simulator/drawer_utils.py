@@ -35,7 +35,7 @@ def draw_path(debug, path, color=carla.Color(255, 0, 0), lt=1, thickness=0.1):
         w1 = carla.Location(x=path[i+1, 0], y=path[i+1, 1], z=0.5)
 
         debug.draw_line(w0, w1, thickness=thickness, color=color, life_time=lt, persistent_lines=False)
-        debug.draw_point(w1 - carla.Location(z=0.25), 0.1, color, lt, False)
+        debug.draw_point(w1 - carla.Location(z=0.25), size=0.05, color=color, life_time=lt, persistent_lines=False)
 
 def draw_waypoint_union(debug, w0, w1, color=carla.Color(255, 0, 0), lt=5):
     debug.draw_line(
