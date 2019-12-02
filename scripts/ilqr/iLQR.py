@@ -78,8 +78,6 @@ class iLQR():
             # Update value function for next time step
             V_x = Q_x - K[:,:,i].T @ Q_uu @ k[:,i]
             V_xx = Q_xx - K[:,:,i].T @ Q_uu @ K[:,:,i]
-            # V_x  = Q_x + Q_ux.T @ k[:, i] + K[:, :, i].T @ Q_u + K[:, :, i].T @ Q_uu @ k[:, i] # Sergey
-            # V_xx = Q_xx + K[:, :, i].T @ Q_ux + Q_ux.T @ K[:, :, i] + K[:, :, i].T @ Q_uu @ K[:, :, i] # Sergey
         
         return k, K
 
