@@ -215,7 +215,7 @@ class Carla_Interface():
             
             drawer_utils.draw_path(self.debug, local_plan, drawer_utils.red, lt=0.05, thickness=0.08)
             drawer_utils.draw_path(self.debug, desired_path, drawer_utils.green, lt=0.05, thickness=0.05)
-            print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
+            # print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
 
             control = self.low_level_controller.get_control(ego_state, control[0], control[1])
             self.ego_vehicle.apply_control(control)

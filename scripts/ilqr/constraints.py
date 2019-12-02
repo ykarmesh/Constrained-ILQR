@@ -93,9 +93,9 @@ class Constraints:
 			# x_r, y_r = X
 			# pdb.set_trace()
 			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
-			dc_off = self.args.w_pos*2*np.absolute(np.array([state[0, i]-x_r, state[1, i]-y_r, 0, 0]))
+			dc_off = self.args.w_pos*2*(np.array([state[0, i]-x_r, state[1, i]-y_r, 0, 0]))
 			# Offset in velocity derivative 
-			dc_vel = self.args.w_vel*2*np.absolute(np.array([0, 0, state[2, i]-self.args.desired_speed,0]))
+			dc_vel = self.args.w_vel*2*(np.array([0, 0, state[2, i]-self.args.desired_speed,0]))
 			# Compute first order derivative TODO: add obstacles constraints
 			l_x_i = dc_off + dc_vel
 			# Compute second order derivative
