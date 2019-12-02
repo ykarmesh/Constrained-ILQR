@@ -46,8 +46,9 @@ class Constraints:
 			c = (velocity*math.tan(self.args.steer_angle_limits[0])/self.args.wheelbase - np.matmul(control[:, i].T, P2))
 			b_4, b_dot_4, b_ddot_4 = self.barrier_function(self.args.q1_yawrate, self.args.q2_yawrate, c, -P2)
 
-			l_u_i = b_dot_1 + b_dot_2 + b_dot_3 + b_dot_4
-			l_uu_i = b_ddot_1 + b_ddot_2 + b_ddot_3 + b_ddot_4 + self.control_cost
+			# pdb.set_trace()
+			l_u_i = b_dot_1 + b_dot_2 + b_dot_3 + b_dot_4 + (2*control[:, i].T@self.control_cost).reshape(-1, 1)
+			l_uu_i = b_ddot_1 + b_ddot_2 + b_ddot_3 + b_ddot_4 + 2*self.control_cost
 
 			l_u[:, i] = l_u_i.squeeze()
 			l_uu[:, :, i] = l_uu_i.squeeze()
