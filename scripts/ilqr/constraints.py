@@ -46,8 +46,7 @@ class Constraints:
 			c = (velocity*math.tan(self.args.steer_angle_limits[0])/self.args.wheelbase - np.matmul(control[:, i].T, P2))
 			b_4, b_dot_4, b_ddot_4 = self.barrier_function(self.args.q1_yawrate, self.args.q2_yawrate, c, -P2)
 
-			# pdb.set_trace()
-			l_u_i = b_dot_1 + b_dot_2 + b_dot_3 + b_dot_4 + (2*control[:, i].T@self.control_cost).reshape(-1, 1)
+			l_u_i = b_dot_1 + b_dot_2 + b_dot_3 + b_dot_4 + (2*control[:, i].T @ self.control_cost).reshape(-1, 1)
 			l_uu_i = b_ddot_1 + b_ddot_2 + b_ddot_3 + b_ddot_4 + 2*self.control_cost
 
 			l_u[:, i] = l_u_i.squeeze()
@@ -94,11 +93,9 @@ class Constraints:
 			# x_r, y_r = X
 			# pdb.set_trace()
 			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
-			dc_off = self.args.w_pos*2*(np.array([state[0, i]-x_r, state[1, i]-y_r, 0, 0]))
-			# Offset in velocity derivative 
-			dc_vel = self.args.w_vel*2*(np.array([0, 0, state[2, i]-self.args.desired_speed,0]))
 			# Compute first order derivative TODO: add obstacles constraints
-			l_x_i = dc_off + dc_vel
+			state_cost = 2*self.state_cost@(np.array([state[0, i]-x_r, state[1, i]-y_r, state[2, i]-self.args.desired_speed, 0]))
+			l_x_i = state_cost
 			# Compute second order derivative
 			l_xx_i = 2*self.state_cost #TODO: add obstacles constraints
 
