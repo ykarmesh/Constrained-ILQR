@@ -58,7 +58,12 @@ class PySimulator:
         # Plot Local Plan
         self.x_local_plan = []
         self.y_local_plan = []
-        self.local_plan_plot, = plt.plot([], [], 'go')
+
+        self.x_desired_plan = []
+        self.y_desired_plan = []
+
+        self.local_plan_plot, = plt.plot([], [], 'go', ms=10)
+        self.desired_plan_plot, = plt.plot([], [], 'co', ms=5)
 
         self.create_ilqr_agent()
 
@@ -80,7 +85,7 @@ class PySimulator:
         self.ax.axhline(y=y, c='r', lw='2')
 
     def init_sim(self):
-        return self.patches[0], self.patches[1], self.local_plan_plot,
+        return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
 
     def get_ego_states(self):
         ego_states = np.array([[self.current_ego_state[0], self.current_ego_state[1],                         0],
@@ -128,11 +133,16 @@ class PySimulator:
         self.patches[1].set_xy(self.NPC_dict[1].getCorners())
 
         # Get local plan
-        self.x_local_plan = local_plan[0, :]
-        self.y_local_plan = local_plan[1, :]
+        self.x_local_plan = local_plan[:, 0]
+        self.y_local_plan = local_plan[:, 1]
         self.local_plan_plot.set_data(self.x_local_plan, self.y_local_plan)
 
-        return self.patches[0], self.patches[1], self.local_plan_plot,
+        #Get desired plan
+        self.x_desired_plan = desired_path[:, 0]
+        self.y_desired_plan = desired_path[:, 1]
+        self.desired_plan_plot.set_data(self.x_desired_plan, self.y_desired_plan)
+
+        return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
 
     def run_simulation(self):
         anim = animation.FuncAnimation(self.fig, self.animate,
