@@ -22,35 +22,44 @@ from arguments import add_arguments
 from PolyRect import PolyRect
 from ilqr.iLQR import iLQR
 
+# Add lambda functions
+cos = lambda a : np.cos(a)
+sin = lambda a : np.sin(a)
+tan = lambda a : np.tan(a)
+
 PI = math.pi
 
 # Lanes defined at 4, 0, -4
 
 class PySimulator:
 
-    def __init__(self, args, SimParams, NPC_traj):
+    def __init__(self, args, SimParams, NPC_states):
         self.args = args
         # num_vehicles is only 2 for now
         self.NPC_dict = {}
         self.patches = []
-        pdb.set_trace()
-        self.num_vehicles = SimParams.num_vehicles
+
+        self.simparams = SimParams
+        self.num_vehicles = self.simparams.num_vehicles
         self.navigation_agent = None
         self.NPC_states = NPC_states
+        self.current_ego_state = self.simparams.start_state
 
         # Plot parameters
-        self.fig = figure(figsize=(25,5))
-        self.ax = fig.add_subplot(111)
+        self.fig = plt.figure(figsize=(25,5))
+        self.ax = self.fig.add_subplot(111)
         self.ax.axis('equal')
-        self.ax.set_xlim(0, SimParams.map_lengthx)
-        self.ax.set_ylim(-SimParams.map_lengthy, SimParams.map_lengthy)
-        self.ax.axhline(y=SimParams.lane1, c='k', lw='4')
-        self.ax.axhline(y=SimParams.lane2, c='k', lw='2', ls='--')
-        self.ax.axhline(y=SimParams.lane3, c='k', lw='4')
+        self.ax.set_xlim(0, self.simparams.map_lengthx)
+        self.ax.set_ylim(-self.simparams.map_lengthy, self.simparams.map_lengthy)
+        self.ax.axhline(y=self.simparams.lane1, c='k', lw='4')
+        self.ax.axhline(y=self.simparams.lane2, c='k', lw='2', ls='--')
+        self.ax.axhline(y=self.simparams.lane3, c='k', lw='4')
+
+        self.create_ilqr_agent()
 
         # Ego vehicle is first
         for i in range(num_vehicles):
-            self.NPC_dict[i] = PolyRect(SimParams.car_dims)
+            self.NPC_dict[i] = PolyRect(self.simparams.car_dims)
             self.patches.append(self.NPC_dict[i].getPatch(self.ax))
         
         # May need to add loop here
@@ -58,9 +67,9 @@ class PySimulator:
         self.ax.add_patch(self.patches[1])
 
     def create_global_plan(self):
-        y = 2
+        y = self.simparams.desired_y
         self.plan_ilqr = []
-        for i in range(0, SimParams.map_length):
+        for i in range(0, self.simparams.map_lengthx):
             self.plan_ilqr.append(np.array([i, y]))
         self.plan_ilqr = np.array(self.plan_ilqr)
         self.ax.axhline(y=y, c='r', lw='4')
@@ -76,6 +85,9 @@ class PySimulator:
                                [                        0,                         0,                         0]])
         return ego_states
 
+    def get_npc_bounding_box(self):
+        return self.simparams.car_dims
+
     def get_npc_states(self):
         # vehicle_states = []
         # for n in range(len(self.vehicles_list)):
@@ -86,15 +98,15 @@ class PySimulator:
         np.zeros((4, 100))
 
     def create_ilqr_agent(self):
+        self.create_global_plan()
         self.navigation_agent = iLQR(self.args, self.get_npc_bounding_box())
         self.navigation_agent.set_global_plan(self.plan_ilqr)
 
     def run_step_ilqr(self):
         assert self.navigation_agent != None, "Navigation Agent not initialized"
 
-        while True:
-            counter = 0
-            desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_states())
+        desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_states())
+        print("Controller: Acc {} Steer: {}".format(control[0, 0], control[1, 0]))
 
         return control[:, 0]
  
@@ -114,7 +126,7 @@ class PySimulator:
     def run_simulation(self):
         anim = animation.FuncAnimation(self.fig, self.animate,
                                init_func=self.init_sim,
-                               frames=self.SimParams.sim_time,
+                               frames=self.simparams.sim_time,
                                interval=1000,
                                blit=True)
         plt.show()
@@ -124,14 +136,15 @@ class PySimulator:
         Find the next state of the vehicle given the current state and control input
         """
         # Clips the controller values between min and max accel and steer values
-        control[0] = np.clip(control[0], SimParams.accel_min, SimParams.accel_max)
-        control[1] = np.clip(control[1], state[2]*tan(SimParams.steer_min)/SimParams.wheelbase, state[2]*tan(SimParams.steer_max)/SimParams.wheelbase)
+        control[0] = np.clip(control[0], self.simparams.accel_min, self.simparams.accel_max)
+        control[1] = np.clip(control[1], state[2]*tan(self.simparams.steer_min)/self.simparams.wheelbase, state[2]*tan(self.simparams.steer_max)/self.simparams.wheelbase)
         
-        Ts = SimParams.dt
+        Ts = self.simparams.dt
         next_state = np.array([state[0] + cos(state[3])*(state[2]*Ts + (control[0]*Ts**2)/2),
                                state[1] + sin(state[3])*(state[2]*Ts + (control[0]*Ts**2)/2),
-                               np.clip(state[2] + control[0]*Ts, 0.0, SimParams.max_speed),
+                               np.clip(state[2] + control[0]*Ts, 0.0, self.simparams.max_speed),
                               (state[3] + control[1]*Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
+        print("Next state {}".format(next_state))
         return next_state
 
 class SimParams:
@@ -146,12 +159,14 @@ class SimParams:
 
     ## Car Parameters
     car_dims = np.array([2, 1])
+    start_state = np.array([10, 2, 0, 0])
     max_speed = 180/3.6
     wheelbase = 2.94
     steer_min = -1.0
     steer_max = 1.0
     accel_min = -5.5
     accel_max = 3.0
+    desired_y = 2
 
 
 
@@ -163,8 +178,9 @@ if __name__ == "__main__":
 
     NPC_init = np.array([0, 2, 0])
     NPC_state = []
-    # for i in range(0, 10, 0.1):
-    #     NPC_state.append(np.array([NPC_init[0]+i, NPC_init[0], i/SimParams.dt, NPC_init[0]]))
+    for i in np.arange(0, 10, 0.1):
+        NPC_state.append(np.array([NPC_init[0]+i, NPC_init[0], i/SimParams.dt, NPC_init[0]]))
     
     num_vehicles = 2
     pysim = PySimulator(args, SimParams, NPC_state)
+    pysim.run_simulation()

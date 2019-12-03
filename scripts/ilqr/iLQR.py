@@ -106,16 +106,9 @@ class iLQR():
         X, U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0], npc_traj)
         traj = X[:2, ::int(self.args.horizon/10)].T
 
-        # if (self.debug_flag < 4):
-        #         print(X)
-        #         print("===================================================")
-        #         print("===================================================")
-        #         print("===================================================")
-        #         self.debug_flag += 1
-
         self.control_seq = U
         self.plot(U, X, ref_traj)
-        return traj, ref_traj, self.filter_control(U,  X[2,:])
+        return traj, ref_traj, U #self.filter_control(U,  X[2,:])
 
     def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan, npc_traj):
         X = self.get_nominal_trajectory(X_0, U)

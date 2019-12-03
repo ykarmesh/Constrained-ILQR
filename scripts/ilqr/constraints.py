@@ -34,18 +34,19 @@ class Constraints:
 			# Offset in path derivative
 			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
 			traj_cost = 2*self.state_cost@(np.array([state[0, i]-x_r, state[1, i]-y_r, state[2, i]-self.args.desired_speed, 0]))
+			pdb.set_trace()
 
 			# Compute first order derivative
 			l_x_i = traj_cost
 
 			# Compute second order derivative
-			l_xx_i = 2*self.state_cost + b_ddot_obs
+			l_xx_i = 2*self.state_cost
 
 			# Obstacle derivative
-			for i in range(self.number_of_npc):
-				b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[0, i])
-				l_x_i += b_dot_obs
-				l_xx_i += b_ddot_obs
+			# for i in range(self.number_of_npc):
+			# 	b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[0, i])
+			# 	l_x_i += b_dot_obs
+			# 	l_xx_i += b_ddot_obs
 
 			l_xx[:, :, i] = l_xx_i
 			l_x[:, i] = l_x_i
