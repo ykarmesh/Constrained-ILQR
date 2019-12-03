@@ -77,7 +77,7 @@ class PySimulator:
         for i in range(0, self.simparams.map_lengthx):
             self.plan_ilqr.append(np.array([i, y]))
         self.plan_ilqr = np.array(self.plan_ilqr)
-        self.ax.axhline(y=y, c='r', lw='4')
+        self.ax.axhline(y=y, c='r', lw='2')
 
     def init_sim(self):
         return self.patches[0], self.patches[1], self.local_plan_plot,
@@ -187,10 +187,11 @@ if __name__ == "__main__":
     add_arguments(argparser)
     args = argparser.parse_args()
 
-    NPC_init = np.array([5, -2, 0])
+    NPC_start = np.array([5, -2, 0])
+    NPC_control = np.ones((2, SimParams.sim_time))
     NPC_traj = []
     for i in np.linspace(0, 10, SimParams.sim_time):
-        NPC_traj.append(np.array([NPC_init[0]+i, NPC_init[1], 0.1/SimParams.dt, NPC_init[2]]))
+        NPC_traj.append(np.array([NPC_start[0]+i, NPC_start[1], 0.1/SimParams.dt, NPC_start[2]]))
     NPC_traj = np.array(NPC_traj)
     
     num_vehicles = 2
