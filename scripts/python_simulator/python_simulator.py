@@ -118,7 +118,8 @@ class PySimulator:
         self.patches[0].set_xy(self.NPC_dict[0].getCorners()) # Update ego vehicle patch
 
         # Get new NPC patch
-        self.NPC_dict[1].createCuboid(self.NPC_states[i])
+        # pdb.set_trace()
+        self.NPC_dict[1].createCuboid([self.NPC_states[i, 0], self.NPC_states[i, 1], self.NPC_states[i, 3]])
         self.patches[1].set_xy(self.NPC_dict[1].getCorners())
 
         return self.patches[0], self.patches[1],
@@ -159,7 +160,7 @@ class SimParams:
 
     ## Car Parameters
     car_dims = np.array([2, 1])
-    start_state = np.array([10, 2, 0, 0])
+    start_state = np.array([10, 1, 0, 0])
     max_speed = 180/3.6
     wheelbase = 2.94
     steer_min = -1.0
@@ -176,11 +177,12 @@ if __name__ == "__main__":
     add_arguments(argparser)
     args = argparser.parse_args()
 
-    NPC_init = np.array([0, 2, 0])
-    NPC_state = []
-    for i in np.arange(0, 10, 0.1):
-        NPC_state.append(np.array([NPC_init[0]+i, NPC_init[0], i/SimParams.dt, NPC_init[0]]))
+    NPC_init = np.array([5, -2, 0])
+    NPC_traj = []
+    for i in np.linspace(0, 10, SimParams.sim_time):
+        NPC_traj.append(np.array([NPC_init[0]+i, NPC_init[1], 0.1/SimParams.dt, NPC_init[2]]))
+    NPC_traj = np.array(NPC_traj)
     
     num_vehicles = 2
-    pysim = PySimulator(args, SimParams, NPC_state)
+    pysim = PySimulator(args, SimParams, NPC_traj)
     pysim.run_simulation()
