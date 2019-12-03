@@ -7,9 +7,11 @@ import math
 from PolyRect import PolyRect
 PI = math.pi
 
+# Lanes defined at 4, 0, -4
+
 class PySimulator:
 
-    def __init__(self, num_vehicles, NPC_trajs):
+    def __init__(self, num_vehicles, NPC_traj):
         # num_vehicles is only 2 for now
         self.num_vehicles = num_vehicles
         self.NPC_dict = {}
@@ -40,9 +42,10 @@ class PySimulator:
     
     def run_iLQR(self):
         # Run iLQR to get control sequence
-    
+ 
     def animate(self):
         # Get new corners of cuboid
+        
         # Set patch corners to new corners
 
         return self.patches[0], self.patches[1],
@@ -56,3 +59,11 @@ class PySimulator:
         plt.show()
 
 
+if __name__ == "__main__":
+    NPC_init = np.array([0, 2, 0])
+    NPC_state = []
+    for i in range(0,10,0.1):
+        NPC_state.append(np.array([NPC_init[0]+i], NPC_init[0], NPC_init[0]]))
+    
+    num_vehicles = 2
+    pysim = PySimulator(num_vehicles, NPC_state)
