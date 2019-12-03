@@ -44,9 +44,11 @@ def add_arguments(parser):
     parser.add_argument('--q1_yawrate', type=float, default=1.00, help="Barrier function q1, yawrate")
     parser.add_argument('--q2_yawrate', type=float, default=1.00, help="Barrier function q2, yawrate")
 
-    parser.add_argument('--q1_obs', type=float, default=1.00, help="Barrier function q1, obs")
-    parser.add_argument('--q2_obs', type=float, default=1.00, help="Barrier function q2, obs")
+    parser.add_argument('--q1_front', type=float, default=1.00, help="Barrier function q1, obs with ego front")
+    parser.add_argument('--q2_front', type=float, default=1.00, help="Barrier function q2, obs with ego front")
 
+    parser.add_argument('--q1_rear', type=float, default=1.00, help="Barrier function q1, obs with ego rear")
+    parser.add_argument('--q2_rear', type=float, default=1.00, help="Barrier function q2, obs with ego rear")
 
     # ___________________ Constraint Parameters ___________________ #
     parser.add_argument('--acc_limits', nargs="*", type=float, default=[-5.5, 2.0], help="Acceleration limits for the ego vehicle (min,max)")
@@ -60,3 +62,12 @@ def add_arguments(parser):
     parser.add_argument('--throttle_control_limits', nargs="*", type=float, default=[-1.0, 1.0], help="Throttle control input limits (min,max)")
 
     # ___________________ Obstacle Parameters ___________________ #
+    parser.add_argument('--t_safe', type=float, default=0.1, help="Time safety headway")
+    parser.add_argument('--s_safe_a', type=float, default=10.0, help="safety margin longitudinal")
+    parser.add_argument('--s_safe_b', type=float, default=4.0, help="safety margin lateral")
+    parser.add_argument('--ego_rad', type=float, default=2, help="Ego Vehicle's radius")
+    parser.add_argument('--ego_lf', type=float, default=1.47, help="Distance to front tire")
+    parser.add_argument('--ego_lr', type=float, default=1.47, help="Distance to rear tire")
+
+
+    

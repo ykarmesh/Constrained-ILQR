@@ -22,7 +22,7 @@ class iLQR():
         self.global_plan = None
         self.local_planner = LocalPlanner(args)
         self.vehicle_model = Model(args)
-        self.constraints = Constraints(args)
+        self.constraints = Constraints(args, obstacle_bb)
         
         # initial nominal trajectory
         self.control_seq = np.zeros((self.args.num_ctrls, self.args.horizon))

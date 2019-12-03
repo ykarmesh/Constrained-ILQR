@@ -3,8 +3,10 @@ import math
 import pdb
 from scipy.optimize import fmin_cobyla
 
+from ilqr.obstacles import Obstacle
+
 class Constraints:
-	def __init__(self, args):
+	def __init__(self, args, obstacle_bb):
 		self.args = args
 		self.control_cost = np.array([[self.args.w_acc,                   0],
 									  [              0, self.args.w_yawrate]])
@@ -15,7 +17,44 @@ class Constraints:
 									[0, 0, 0,               0]])
 		self.coeffs = None
 
-	
+		self.number_of_npc = len(obstacle_bb)
+
+		self.obs_constraints = {}
+		for i in range(self.number_of_npc):
+			self.obs_constraints[i] = Obstacle(args, i, obstacle_bb)
+
+	def get_state_cost_derivatives(self, state, poly_coeffs, x_local_plan, npc_traj):
+		"""
+		Returns the first order and second order derivative of the value function wrt state
+		"""
+		l_x = np.zeros((self.args.num_states, self.args.horizon))
+		l_xx = np.zeros((self.args.num_states, self.args.num_states, self.args.horizon))
+		c_state = 0
+		for i in range(self.args.horizon):
+			# Offset in path derivative
+			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
+			traj_cost = 2*self.state_cost@(np.array([state[0, i]-x_r, state[1, i]-y_r, state[2, i]-self.args.desired_speed, 0]))
+
+			# Compute first order derivative
+			l_x_i = traj_cost
+
+			# Compute second order derivative
+			l_xx_i = 2*self.state_cost + b_ddot_obs
+
+			# Obstacle derivative
+			for i in range(self.number_of_npc):
+				b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[0, i])
+				l_x_i += b_dot_obs
+				l_xx_i += b_ddot_obs
+
+			l_xx[:, :, i] = l_xx_i
+			l_x[:, i] = l_x_i
+			# Calulate total state cost
+			# ref_state = np.array([x_r, y_r, self.args.desired_speed, 0]) # Theta does not matter
+			# state_diff = state[:,i]-ref_state
+			# c_state = c_state + state_diff.T @ self.state_cost @ state_diff
+		# pdb.set_trace()
+		return l_x, l_xx
 
 	def get_control_cost_derivatives(self, state, control):
 		"""
@@ -58,7 +97,6 @@ class Constraints:
 		return l_u, l_uu
 
 	def barrier_function(self, q1, q2, c, c_dot):
-		# pdb.set_trace()
 		b = q1*np.exp(q2*c)
 		b_dot = q1*q2*np.exp(q2*c)*c_dot
 		b_ddot = q1*(q2**2)*np.exp(q2*c)*np.matmul(c_dot, c_dot.T)
@@ -78,35 +116,6 @@ class Constraints:
 		# l = c_state + c_ctrl
 
 		return l_x, l_xx, l_u, l_uu, l_ux
-
-	def get_state_cost_derivatives(self, state, poly_coeffs, x_local_plan):
-		"""
-		Returns the first order and second order derivative of the value function wrt state
-		"""
-		l_x = np.zeros((self.args.num_states, self.args.horizon))
-		l_xx = np.zeros((self.args.num_states, self.args.num_states, self.args.horizon))
-		c_state = 0
-		for i in range(self.args.horizon):
-			# Offset in path derivative
-			# self.coeffs = poly_coeffs
-			# X = fmin_cobyla(self.offset_obj, x0=[state[0, i], state[1, i]], cons=[self.c1])
-			# x_r, y_r = X
-			# pdb.set_trace()
-			x_r, y_r = self.find_closest_point(state[:, i], poly_coeffs, x_local_plan)
-			# Compute first order derivative TODO: add obstacles constraints
-			state_cost = 2*self.state_cost@(np.array([state[0, i]-x_r, state[1, i]-y_r, state[2, i]-self.args.desired_speed, 0]))
-			l_x_i = state_cost
-			# Compute second order derivative
-			l_xx_i = 2*self.state_cost #TODO: add obstacles constraints
-
-			l_xx[:, :, i] = l_xx_i
-			l_x[:, i] = l_x_i
-			# Calulate total state cost
-			# ref_state = np.array([x_r, y_r, self.args.desired_speed, 0]) # Theta does not matter
-			# state_diff = state[:,i]-ref_state
-			# c_state = c_state + state_diff.T @ self.state_cost @ state_diff
-		# pdb.set_trace()
-		return l_x, l_xx
 
 	def get_total_cost(self, state, control_seq, poly_coeffs, x_local_plan):
 		"""
@@ -134,6 +143,16 @@ class Constraints:
 		min_i = np.argmin(closest_ind)
 		
 		return local_plan[min_i, :]
+
+
+
+
+
+
+
+
+
+
 
 	# def get_acceleration_cost(self): 
 	# 	return np.matmul(np.matmul(self.args.w_acc*self.control.T*np.array([[1,0],[0,0]]))*self.control)

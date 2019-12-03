@@ -283,10 +283,8 @@ class Carla_Interface():
 
             vehicle_states.append(np.array([vehicle_transform.location.x,
                                             vehicle_transform.location.y,
-                                            vehicle_velocity.x,
-                                            vehicle_velocity.y,
-                                            vehicle_transform.rotation.yaw,
-                                            vehicle_angular_velocity.z]))
+                                            vehicle_velocity.x,,
+                                            vehicle_transform.rotation.yaw]))
         return vehicle_states
 
     def get_npc_bounding_box(self):
