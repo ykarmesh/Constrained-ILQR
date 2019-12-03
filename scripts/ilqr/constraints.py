@@ -43,7 +43,8 @@ class Constraints:
 
 			# Obstacle derivative
 			# for i in range(self.number_of_npc):
-			# 	b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[0, i])
+			# 	pdb.set_trace()
+			# 	b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[:, i])
 			# 	l_x_i += b_dot_obs
 			# 	l_xx_i += b_ddot_obs
 

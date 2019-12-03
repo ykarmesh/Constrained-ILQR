@@ -28,6 +28,7 @@ sin = lambda a : np.sin(a)
 tan = lambda a : np.tan(a)
 
 PI = math.pi
+colors = ['r', 'g', 'b', 'k']
 
 # Lanes defined at 4, 0, -4
 
@@ -46,7 +47,7 @@ class PySimulator:
         self.current_ego_state = self.simparams.start_state
 
         # Plot parameters
-        self.fig = plt.figure(figsize=(25,5))
+        self.fig = plt.figure(figsize=(25, 5))
         self.ax = self.fig.add_subplot(111)
         self.ax.axis('equal')
         self.ax.set_xlim(0, self.simparams.map_lengthx)
@@ -70,11 +71,20 @@ class PySimulator:
         # Ego vehicle is first
         for i in range(num_vehicles):
             self.NPC_dict[i] = PolyRect(self.simparams.car_dims)
-            self.patches.append(self.NPC_dict[i].getPatch(self.ax))
+            self.patches.append(self.NPC_dict[i].getPatch(self.ax, colors[i]))
         
         # May need to add loop here
         self.ax.add_patch(self.patches[0])
         self.ax.add_patch(self.patches[1])
+
+    def simulate_npc(self, init_state, control):
+        self.NPC_states.append(init_state)
+        control = np.vstack((control, np.array((2, self.args.horizon))))
+        for i in range(len(control)):
+            next_state = self.run_model_simulation(self.NPC_states[i], control[i])
+            self.NPC_states.append(next_state)
+        self.NPC_states = np.array(self.NPC_states).T
+        
 
     def create_global_plan(self):
         y = self.simparams.desired_y
@@ -98,14 +108,8 @@ class PySimulator:
     def get_npc_bounding_box(self):
         return self.simparams.car_dims
 
-    def get_npc_states(self):
-        # vehicle_states = []
-        # for n in range(len(self.vehicles_list)):
-        #     vehicle_states.append(np.array([vehicle_transform.location.x,
-        #                                     vehicle_transform.location.y,
-        #                                     vehicle_velocity.x,,
-        #                                     vehicle_transform.rotation.yaw]))
-        np.zeros((4, 100))
+    def get_npc_states(self, i):
+        return self.NPC_states[:, i:i+self.args.horizon]
 
     def create_ilqr_agent(self):
         self.create_global_plan()
@@ -172,14 +176,14 @@ class SimParams:
     dt = 0.1
     sim_time = 100
     map_lengthx = 50
-    map_lengthy = 50
-    lane1 = 4
+    map_lengthy = 6
+    lane1 = 5
     lane2 = 0
-    lane3 = -4
+    lane3 = -5
     num_vehicles = 1
 
     ## Car Parameters
-    car_dims = np.array([2, 1])
+    car_dims = np.array([4, 2])
     start_state = np.array([10, 1, 0, 0])
     max_speed = 180/3.6
     wheelbase = 2.94
@@ -187,7 +191,7 @@ class SimParams:
     steer_max = 1.0
     accel_min = -5.5
     accel_max = 3.0
-    desired_y = 2
+    desired_y = 2.5
 
 
 
@@ -200,7 +204,7 @@ if __name__ == "__main__":
     NPC_start = np.array([5, -2, 0])
     NPC_control = np.ones((2, SimParams.sim_time))
     NPC_traj = []
-    for i in np.linspace(0, 10, SimParams.sim_time):
+    for i in np.linspace(0, 30, SimParams.sim_time):
         NPC_traj.append(np.array([NPC_start[0]+i, NPC_start[1], 0.1/SimParams.dt, NPC_start[2]]))
     NPC_traj = np.array(NPC_traj)
     

@@ -32,7 +32,7 @@ class iLQR():
         self.lamb_factor = 10
         self.max_lamb = 1000
 
-        self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(1,3, num=0, figsize=(15, 5))
+        self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(1,3, num=0, figsize=(20, 5))
 
     
     def set_global_plan(self, global_plan):
@@ -148,7 +148,11 @@ class iLQR():
         self.ax1.set_ylabel('Values')
         self.ax1.set_xlabel('Time')
         self.ax1.set_title('Controls',fontsize=18)
-        plt.legend()
+        # self.ax1.xlim(0, len(control[0]))
+        # self.ax1.ylim(-6, 6)
+        # self.ax1.axis('equal')
+        self.ax1.legend()
+        self.ax1.grid()
 
         self.ax2.clear()
         self.ax2.plot(ref_traj[:, 0], ref_traj[:, 1], color='r', label='Ref Traj')
@@ -156,7 +160,9 @@ class iLQR():
         self.ax2.set_ylabel('y')
         self.ax2.set_xlabel('x')
         self.ax2.set_title('Position Trajectory',fontsize=18)
-        plt.legend()
+        self.ax2.legend()
+        self.ax2.grid()
+        # plt.legend()
         
         self.ax3.clear()
         self.ax3.plot(np.arange(len(X[0])), X[2, :], color='r', label='Velocity')
@@ -164,6 +170,7 @@ class iLQR():
         self.ax3.set_ylabel('Values')
         self.ax3.set_xlabel('Time')
         self.ax3.set_title('Traj',fontsize=18)
-        plt.legend()
+        self.ax3.grid()
+        self.ax3.legend()
         plt.pause(0.001)
 

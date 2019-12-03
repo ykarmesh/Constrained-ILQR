@@ -35,7 +35,7 @@ class Model:
         next_state = np.array([state[0] + cos(state[3])*(state[2]*self.Ts + (control[0]*self.Ts**2)/2),
                                state[1] + sin(state[3])*(state[2]*self.Ts + (control[0]*self.Ts**2)/2),
                                np.clip(state[2] + control[0]*self.Ts, 0.0, self.max_speed),
-                              (state[3] + control[1]*self.Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
+                               state[3] + control[1]*self.Ts])  # wrap angles between 0 and 2*pi - Gave me error
         return next_state
 
     def get_A_matrix(self, velocity_vals, theta, acceleration_vals):
