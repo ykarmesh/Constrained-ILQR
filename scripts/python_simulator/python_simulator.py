@@ -65,7 +65,7 @@ class PySimulator:
         self.plan_ilqr = np.array(self.plan_ilqr)
         self.ax.axhline(y=y, c='r', lw='4')
 
-    def init(self):
+    def init_sim(self):
         return self.patches[0], self.patches[1],
 
     def get_ego_states(self):
@@ -98,17 +98,23 @@ class PySimulator:
 
         return control[:, 0]
  
-    def animate(self):
-        # Get new corners of cuboid
-        
-        # Set patch corners to new corners
+    def animate(self,i):
+        # Get new ego patch
+        control = self.run_step_ilqr()
+        self.current_ego_state = self.run_model_simulation(self.current_ego_state, control)
+        self.NPC_dict[0].createCuboid([self.current_ego_state[0], self.current_ego_state[1], self.current_ego_state[3]]) # Update ego vehicle patch
+        self.patches[0].set_xy(self.NPC_dict[0].getCorners()) # Update ego vehicle patch
+
+        # Get new NPC patch
+        self.NPC_dict[1].createCuboid(self.NPC_states[i])
+        self.patches[1].set_xy(self.NPC_dict[1].getCorners())
 
         return self.patches[0], self.patches[1],
 
     def run_simulation(self):
-        anim = animation.FuncAnimation(fig, animate,
-                               init_func=init,
-                               frames=len(total_states),
+        anim = animation.FuncAnimation(self.fig, self.animate,
+                               init_func=self.init_sim,
+                               frames=self.SimParams.sim_time,
                                interval=1000,
                                blit=True)
         plt.show()
