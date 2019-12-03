@@ -103,7 +103,7 @@ class Constraints:
 
 		return b, b_dot, b_ddot
 
-	def get_cost_derivatives(self, state, control, poly_coeffs, x_local_plan):
+	def get_cost_derivatives(self, state, control, poly_coeffs, x_local_plan, npc_traj):
 		"""
 		Returns the different cost terms for the trajectory
 		This is the main function which calls all the other functions 
@@ -111,13 +111,13 @@ class Constraints:
 		self.state = state
 		# pdb.set_trace()
 		l_u, l_uu = self.get_control_cost_derivatives(state, control)
-		l_x, l_xx = self.get_state_cost_derivatives(state, poly_coeffs, x_local_plan)
+		l_x, l_xx = self.get_state_cost_derivatives(state, poly_coeffs, x_local_plan, npc_traj)
 		l_ux = np.zeros((self.args.num_ctrls, self.args.num_states, self.args.horizon))
 		# l = c_state + c_ctrl
 
 		return l_x, l_xx, l_u, l_uu, l_ux
 
-	def get_total_cost(self, state, control_seq, poly_coeffs, x_local_plan):
+	def get_total_cost(self, state, control_seq, poly_coeffs, x_local_plan, npc_traj):
 		"""
 		Returns cost of a sequence
 		"""

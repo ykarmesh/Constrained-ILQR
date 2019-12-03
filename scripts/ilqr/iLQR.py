@@ -56,10 +56,10 @@ class iLQR():
             X_new[:, i+1] = self.vehicle_model.forward_simulate(X_new[:, i], U_new[:, i])
         return X_new, U_new
 
-    def backward_pass(self, X, U, poly_coeff, x_local_plan, lamb):
+    def backward_pass(self, X, U, poly_coeff, x_local_plan, npc_traj, lamb):
         # Find control sequence that minimizes Q-value function
         # Get derivatives of Q-function wrt to state and control
-        l_x, l_xx, l_u, l_uu, l_ux = self.constraints.get_cost_derivatives(X[:, 1:], U, poly_coeff, x_local_plan) 
+        l_x, l_xx, l_u, l_uu, l_ux = self.constraints.get_cost_derivatives(X[:, 1:], U, poly_coeff, x_local_plan, npc_traj) 
         df_dx = self.vehicle_model.get_A_matrix(X[2, 1:], X[3, 1:], U[0,:])
         df_du = self.vehicle_model.get_B_matrix(X[3, 1:])
         # Value function at final timestep is known
@@ -92,7 +92,7 @@ class iLQR():
         return k, K
 
 
-    def run_step(self, ego_state, npc_states):
+    def run_step(self, ego_state, npc_traj):
         assert self.global_plan is not None, "Set a global plan in iLQR before starting run_step"
 
         self.local_planner.set_ego_state(ego_state)
@@ -103,7 +103,7 @@ class iLQR():
         # self.control_seq[:, :-1] = self.control_seq[:, 1:]
         # self.control_seq[:, -1] = np.zeros((self.args.num_ctrls))
 
-        X, U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0])
+        X, U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0], npc_traj)
         traj = X[:2, ::int(self.args.horizon/10)].T
 
         # if (self.debug_flag < 4):
@@ -117,16 +117,16 @@ class iLQR():
         self.plot(U, X, ref_traj)
         return traj, ref_traj, self.filter_control(U,  X[2,:])
 
-    def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan):
+    def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan, npc_traj):
         X = self.get_nominal_trajectory(X_0, U)
         J_old = sys.float_info.max
         lamb = 1 # Regularization parameter
         # Run iLQR for max iterations
         for itr in range(self.args.max_iters):
-            k, K = self.backward_pass(X, U, poly_coeff, x_local_plan, lamb)
+            k, K = self.backward_pass(X, U, poly_coeff, x_local_plan, npc_traj, lamb)
             # Get control values at control points and new states again by a forward rollout
             X_new, U_new = self.forward_pass(X, U, k, K)
-            J_new = self.constraints.get_total_cost(X, U, poly_coeff, x_local_plan)
+            J_new = self.constraints.get_total_cost(X, U, poly_coeff, x_local_plan, npc_traj)
             
             if J_new < J_old:
                 X = X_new
