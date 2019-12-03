@@ -17,7 +17,7 @@ class Constraints:
 									[0, 0, 0,               0]])
 		self.coeffs = None
 
-		self.number_of_npc = len(obstacle_bb)
+		self.number_of_npc = 1 # hardcode
 
 		self.obs_constraints = {}
 		for i in range(self.number_of_npc):
@@ -42,11 +42,15 @@ class Constraints:
 			l_xx_i = 2*self.state_cost
 
 			# Obstacle derivative
-			# for i in range(self.number_of_npc):
-			# 	pdb.set_trace()
-			# 	b_dot_obs, b_ddot_obs = self.obs_constraints[i].get_obstacle_cost_derivatives(npc_traj[i], i, state[:, i])
-			# 	l_x_i += b_dot_obs
-			# 	l_xx_i += b_ddot_obs
+			for j in range(self.number_of_npc):
+				# pdb.set_trace()
+				b_dot_obs, b_ddot_obs = self.obs_constraints[j].get_obstacle_cost_derivatives(npc_traj, i, state[:, i])
+				# b_dot_obs = np.array([0, 0, 0, 0])
+				# b_ddot_obs = np.zeros((4,4))
+
+				l_x_i += b_dot_obs.squeeze()
+				l_xx_i += b_ddot_obs
+				# print(b_dot_obs)
 
 			l_xx[:, :, i] = l_xx_i
 			l_x[:, i] = l_x_i
