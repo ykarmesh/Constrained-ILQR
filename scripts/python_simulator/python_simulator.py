@@ -153,7 +153,8 @@ class PySimulator:
                                init_func=self.init_sim,
                                frames=self.simparams.sim_time,
                                interval=1000,
-                               blit=True)
+                               blit=True,
+                               repeat=False)
         plt.show()
 
     def run_model_simulation(self, state, control):
@@ -174,7 +175,7 @@ class PySimulator:
 
 class SimParams:
     dt = 0.1
-    sim_time = 100
+    sim_time = 10
     map_lengthx = 50
     map_lengthy = 6
     lane1 = 5
@@ -192,6 +193,7 @@ class SimParams:
     accel_min = -5.5
     accel_max = 3.0
     desired_y = 2.5
+    NPC_max_acc = 2.0
 
 
 
@@ -207,6 +209,9 @@ if __name__ == "__main__":
     for i in np.linspace(0, 30, SimParams.sim_time):
         NPC_traj.append(np.array([NPC_start[0]+i, NPC_start[1], 0.1/SimParams.dt, NPC_start[2]]))
     NPC_traj = np.array(NPC_traj)
+
+    NPC_ctrl = np.zeros((2, SimParams.sim_time))
+    NPC_ctrl[0,:] = np.linspace(SimParams.NPC_max_acc, 0, SimParams.sim_time)
     
     num_vehicles = 2
     pysim = PySimulator(args, SimParams, NPC_traj)
