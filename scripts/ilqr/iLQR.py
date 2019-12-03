@@ -26,7 +26,7 @@ class iLQR():
         
         # initial nominal trajectory
         self.control_seq = np.zeros((self.args.num_ctrls, self.args.horizon))
-        self.control_seq[0, :] = np.ones((self.args.horizon)) * 1.0
+        self.control_seq[0, :] = np.ones((self.args.horizon)) * 0.5
         self.debug_flag = 0
 
         self.lamb_factor = 10
