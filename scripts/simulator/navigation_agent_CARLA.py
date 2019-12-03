@@ -151,6 +151,7 @@ class Carla_Interface():
             end_point = random.choice(self.spawn_points)
         print("\nGoal position: {}".format(end_point.location))
 
+        end_point.location = carla.Location(x=383.179871, y=100.199161, z=1.322136)
         # Give set of intermediate points spaced far away from start to goal
         rough_route = [self.spawn_point.location, end_point.location]
 
@@ -186,6 +187,10 @@ class Carla_Interface():
         # Carla Funtion for Creating a Basic Navigation Agent
         self.navigation_agent = BasicAgent(self.ego_vehicle, target_speed)
         self.navigation_agent._local_planner.set_global_plan(self.plan_pid)
+        
+        from ilqr.local_planner import LocalPlanner
+        self.local_planner = LocalPlanner(args)
+        self.local_planner.set_global_planner(self.plan_ilqr)
 
     def run_step_pid(self):
         # Loop for controls
@@ -195,8 +200,13 @@ class Carla_Interface():
             control = self.navigation_agent.run_step(debug=self.verbose)
             self.ego_vehicle.apply_control(control)
 
+            self.local_planner.set_ego_state(self.get_ego_states())
+            ref_traj, poly_coeff = self.local_planner.get_local_plan()
+            drawer_utils.draw_path(self.debug, ref_traj, drawer_utils.red, lt=0.05, thickness=0.08)
+
             # render scene
             pygame.display.flip()
+            self.world.tick()
 
             if self.verbose:
                 print(self.ego_vehicle.get_location())
@@ -210,20 +220,25 @@ class Carla_Interface():
         assert self.navigation_agent != None, "Navigation Agent not initialized"
 
         while True:
-            ego_state = self.get_ego_states()
-            desired_path, local_plan, control = self.navigation_agent.run_step(ego_state, self.get_npc_state())
+            counter = 0
+            desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_state())
             
-            drawer_utils.draw_path(self.debug, local_plan, drawer_utils.red, lt=0.05, thickness=0.08)
-            drawer_utils.draw_path(self.debug, desired_path, drawer_utils.green, lt=0.05, thickness=0.05)
-            print("High Level Controller: Acc {} Steer {}".format(control[0], control[1]))
+            while counter < self.args.mpc_horizon:
+                drawer_utils.draw_path(self.debug, local_plan, drawer_utils.red, lt=0.05, thickness=0.08)
+                drawer_utils.draw_path(self.debug, desired_path, drawer_utils.green, lt=0.05, thickness=0.05)
+                print("High Level Controller: Acc {} Steer {}".format(control[0, counter], control[1, counter]))
 
-            control = self.low_level_controller.get_control(ego_state, control[0], control[1])
-            self.ego_vehicle.apply_control(control)
+                low_control = self.low_level_controller.get_control(self.get_ego_states(), control[0, counter], control[1, counter])
+                self.ego_vehicle.apply_control(low_control)
 
-            self.world.tick()
+                self.world.tick()
 
-            # render scene
-            pygame.display.flip()
+                # render scene
+                pygame.display.flip()
+
+                counter += 1
+                if not self.args.use_mpc:
+                    break
             
 
 

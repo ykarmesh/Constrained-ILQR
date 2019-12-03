@@ -27,6 +27,10 @@ class iLQR():
         # initial nominal trajectory
         self.control_seq = np.zeros((self.args.num_ctrls, self.args.horizon))
         self.control_seq[0, :] = np.ones((self.args.horizon)) * 1.0
+        self.debug_flag = 0
+
+        self.lamb_factor = 10
+        self.max_lamb = 1000
 
         self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(1,3, num=0, figsize=(15, 5))
 
@@ -52,7 +56,7 @@ class iLQR():
             X_new[:, i+1] = self.vehicle_model.forward_simulate(X_new[:, i], U_new[:, i])
         return X_new, U_new
 
-    def backward_pass(self, X, U, poly_coeff, x_local_plan):
+    def backward_pass(self, X, U, poly_coeff, x_local_plan, lamb):
         # Find control sequence that minimizes Q-value function
         # Get derivatives of Q-function wrt to state and control
         l_x, l_xx, l_u, l_uu, l_ux = self.constraints.get_cost_derivatives(X[:, 1:], U, poly_coeff, x_local_plan) 
@@ -71,15 +75,19 @@ class iLQR():
             Q_xx = l_xx[:,:,i] + df_dx[:,:,i].T @ V_xx @ df_dx[:,:,i] 
             Q_ux = l_ux[:,:,i] + df_du[:,:,i].T @ V_xx @ df_dx[:,:,i]
             Q_uu = l_uu[:,:,i] + df_du[:,:,i].T @ V_xx @ df_du[:,:,i]
-            Q_uu_inv = np.linalg.pinv(Q_uu) # TODO: Do this inverse using SVD as mentioned in StudyWolf website
+            # Q_uu_inv = np.linalg.pinv(Q_uu)
+            Q_uu_evals, Q_uu_evecs = np.linalg.eig(Q_uu)
+            Q_uu_evals[Q_uu_evals < 0] = 0.0
+            Q_uu_evals += lamb
+            Q_uu_inv = np.dot(Q_uu_evecs,np.dot(np.diag(1.0/Q_uu_evals), Q_uu_evecs.T))
+
+    
             # Calculate feedforward and feedback terms
             k[:,i] = -Q_uu_inv @ Q_u
             K[:,:,i] = -Q_uu_inv @ Q_ux
             # Update value function for next time step
             V_x = Q_x - K[:,:,i].T @ Q_uu @ k[:,i]
             V_xx = Q_xx - K[:,:,i].T @ Q_uu @ K[:,:,i]
-            # V_x  = Q_x + Q_ux.T @ k[:, i] + K[:, :, i].T @ Q_u + K[:, :, i].T @ Q_uu @ k[:, i] # Sergey
-            # V_xx = Q_xx + K[:, :, i].T @ Q_ux + Q_ux.T @ K[:, :, i] + K[:, :, i].T @ Q_uu @ K[:, :, i] # Sergey
         
         return k, K
 
@@ -92,24 +100,30 @@ class iLQR():
 
         X_0 = np.array([ego_state[0][0], ego_state[0][1], ego_state[1][0], ego_state[2][2]])
 
-        pdb.set_trace()
         # self.control_seq[:, :-1] = self.control_seq[:, 1:]
         # self.control_seq[:, -1] = np.zeros((self.args.num_ctrls))
 
         X, U = self.get_optimal_control_seq(X_0, self.control_seq, poly_coeff, ref_traj[:, 0])
         traj = X[:2, ::int(self.args.horizon/10)].T
 
+        # if (self.debug_flag < 4):
+        #         print(X)
+        #         print("===================================================")
+        #         print("===================================================")
+        #         print("===================================================")
+        #         self.debug_flag += 1
+
         self.control_seq = U
         self.plot(U, X, ref_traj)
-
-        return traj, ref_traj, self.filter_control(U[:, 0],  ego_state[1][0])
+        return traj, ref_traj, self.filter_control(U,  X[2,:])
 
     def get_optimal_control_seq(self, X_0, U, poly_coeff, x_local_plan):
         X = self.get_nominal_trajectory(X_0, U)
         J_old = sys.float_info.max
+        lamb = 1 # Regularization parameter
         # Run iLQR for max iterations
         for itr in range(self.args.max_iters):
-            k, K = self.backward_pass(X, U, poly_coeff, x_local_plan)
+            k, K = self.backward_pass(X, U, poly_coeff, x_local_plan, lamb)
             # Get control values at control points and new states again by a forward rollout
             X_new, U_new = self.forward_pass(X, U, k, K)
             J_new = self.constraints.get_total_cost(X, U, poly_coeff, x_local_plan)
@@ -117,17 +131,21 @@ class iLQR():
             if J_new < J_old:
                 X = X_new
                 U = U_new
+                lamb /= self.lamb_factor
+                if (abs(J_old - J_new) < self.args.tol):
+                    print("Tolerance reached")
+                    break
             else:
-                print("Bad Direction")
-            if (abs(J_old - J_new) < self.args.tol):
-                break
+                lamb *= self.lamb_factor
+                if lamb > self.max_lamb:
+                    break
             
             J_old = J_new
-        print(J_new)
+        # print(J_new)
         return X, U
 
     def filter_control(self, U, velocity):
-        U[1] = math.atan2(self.args.wheelbase*U[1],velocity)
+        U[1] = np.arctan2(self.args.wheelbase*U[1],velocity[:-1])
         return U
 
     def plot(self, control, X, ref_traj):
@@ -144,15 +162,14 @@ class iLQR():
         self.ax2.plot(X[0, :], X[1, :], color='g', label='Real Traj')
         self.ax2.set_ylabel('y')
         self.ax2.set_xlabel('x')
-        self.ax2.set_title('Traj',fontsize=18)
+        self.ax2.set_title('Position Trajectory',fontsize=18)
         plt.legend()
-        plt.pause(0.001)
         
         self.ax3.clear()
         self.ax3.plot(np.arange(len(X[0])), X[2, :], color='r', label='Velocity')
-        self.ax3.plot(np.arange(len(X[0])), X[3, :], color='g', label='Steering')
-        self.ax3.set_ylabel('y')
-        self.ax3.set_xlabel('x')
+        self.ax3.plot(np.arange(len(X[0])), X[3, :], color='g', label='Yaw')
+        self.ax3.set_ylabel('Values')
+        self.ax3.set_xlabel('Time')
         self.ax3.set_title('Traj',fontsize=18)
         plt.legend()
         plt.pause(0.001)

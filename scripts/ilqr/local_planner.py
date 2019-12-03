@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+import pdb
 
 class LocalPlanner:
     """
@@ -40,8 +41,12 @@ class LocalPlanner:
         local_wpts = self.get_local_wpts()
         x = local_wpts[:,0]
         y = local_wpts[:,1]
-        coeffs = np.polyfit(x, y, 3)
+        coeffs = np.polyfit(x, y, self.args.poly_order)
         new_y = np.polyval(np.poly1d(coeffs), x)
+
+        # print(np.sum(np.abs(y - new_y)))
+        # if (np.sum(np.abs(y - new_y)) > 0.5):
+        #     pdb.set_trace()
 
         warnings.simplefilter('ignore', np.RankWarning)
         
