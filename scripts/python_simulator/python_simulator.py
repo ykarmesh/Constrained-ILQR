@@ -55,6 +55,11 @@ class PySimulator:
         self.ax.axhline(y=self.simparams.lane2, c='k', lw='2', ls='--')
         self.ax.axhline(y=self.simparams.lane3, c='k', lw='4')
 
+        # Plot Local Plan
+        self.x_local_plan = []
+        self.y_local_plan = []
+        self.local_plan, = plt.plot([], [], 'go')
+
         self.create_ilqr_agent()
 
         # Ego vehicle is first
@@ -75,7 +80,7 @@ class PySimulator:
         self.ax.axhline(y=y, c='r', lw='4')
 
     def init_sim(self):
-        return self.patches[0], self.patches[1],
+        return self.patches[0], self.patches[1], self.local_plan,
 
     def get_ego_states(self):
         ego_states = np.array([[self.current_ego_state[0], self.current_ego_state[1],                         0],
@@ -108,11 +113,11 @@ class PySimulator:
         desired_path, local_plan, control = self.navigation_agent.run_step(self.get_ego_states(), self.get_npc_states())
         print("Controller: Acc {} Steer: {}".format(control[0, 0], control[1, 0]))
 
-        return control[:, 0]
+        return desired_path, local_plan, control[:, 0]
  
     def animate(self,i):
         # Get new ego patch
-        control = self.run_step_ilqr()
+        desired_path, local_plan, control = self.run_step_ilqr()
         self.current_ego_state = self.run_model_simulation(self.current_ego_state, control)
         self.NPC_dict[0].createCuboid([self.current_ego_state[0], self.current_ego_state[1], self.current_ego_state[3]]) # Update ego vehicle patch
         self.patches[0].set_xy(self.NPC_dict[0].getCorners()) # Update ego vehicle patch
@@ -121,7 +126,12 @@ class PySimulator:
         self.NPC_dict[1].createCuboid(self.NPC_states[i])
         self.patches[1].set_xy(self.NPC_dict[1].getCorners())
 
-        return self.patches[0], self.patches[1],
+        # Get local plan
+        self.x_local_plan = local_plan[0, :]
+        self.y_local_plan = local_plan[1, :]
+        self.local_plan.set_data(self.x_local_plan, self.y_local_plan)
+
+        return self.patches[0], self.patches[1], self.local_plan,
 
     def run_simulation(self):
         anim = animation.FuncAnimation(self.fig, self.animate,

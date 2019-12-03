@@ -23,6 +23,9 @@ ax.axhline(y=-4, c='k', lw='4')
 ego_dims = np.array([2, 1])
 ego_init = np.array([0.0, 0.0, 0.0])
 
+xdata, ydata = [], []
+ln, = plt.plot([], [], 'go')
+
 
 ego_cube = PolyRect(ego_dims) # instantiate ego car
 # ego_cube.createCuboid(total_states[0])
@@ -44,7 +47,7 @@ ego_patch1 = ego_cube1.getPatch(ax)
 ax.add_patch(ego_patch1)
 
 def init():
-    return ego_patch, ego_patch1,
+    return ego_patch, ego_patch1, ln,
 
 def animate(i):
     # Get new corners of cuboid
@@ -54,13 +57,16 @@ def animate(i):
     # new_corner =  np.array([[3+i, 0], [5+i, 0.], [5, 2+i], [3, 2+i]])
     ego_patch.set_xy(new_corner)
     # Set patch corners to new corners
+    xdata = [15]
+    ydata = [0]
+    ln.set_data(xdata, ydata)
 
     curr_state1 = total_states1[i]
     ego_cube1.createCuboid(curr_state1)
     new_corner1 = ego_cube1.getCorners()
     # new_corner =  np.array([[3+i, 0], [5+i, 0.], [5, 2+i], [3, 2+i]])
     ego_patch1.set_xy(new_corner1)
-    return ego_patch, ego_patch1,
+    return ego_patch, ego_patch1, ln,
 
 anim = animation.FuncAnimation(fig, animate,
                                init_func=init,
