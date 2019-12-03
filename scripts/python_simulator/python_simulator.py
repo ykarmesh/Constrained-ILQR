@@ -115,7 +115,7 @@ class PySimulator:
 
         return desired_path, local_plan, control[:, 0]
  
-    def animate(self,i):
+    def animate(self, i):
         # Get new ego patch
         desired_path, local_plan, control = self.run_step_ilqr()
         self.current_ego_state = self.run_model_simulation(self.current_ego_state, control)
