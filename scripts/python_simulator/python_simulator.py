@@ -31,12 +31,12 @@ class PySimulator:
     def __init__(self, args, SimParams, NPC_traj):
         self.args = args
         # num_vehicles is only 2 for now
-        self.num_vehicles = SimParams.num_vehicles
         self.NPC_dict = {}
         self.patches = []
+        pdb.set_trace()
+        self.num_vehicles = SimParams.num_vehicles
         self.navigation_agent = None
         self.NPC_states = NPC_states
-        car_dims = np.array([2, 1])
 
         # Plot parameters
         self.fig = figure(figsize=(25,5))
@@ -50,7 +50,7 @@ class PySimulator:
 
         # Ego vehicle is first
         for i in range(num_vehicles):
-            self.NPC_dict[i] = PolyRect(car_dims)
+            self.NPC_dict[i] = PolyRect(SimParams.car_dims)
             self.patches.append(self.NPC_dict[i].getPatch(self.ax))
         
         # May need to add loop here
@@ -59,11 +59,11 @@ class PySimulator:
 
     def create_global_plan(self):
         y = 2
-        self.global_plan = []
+        self.plan_ilqr = []
         for i in range(0, SimParams.map_length):
-            self.global_plan.append(np.array([i, y]))
-        self.global_plan = np.array(self.global_plan)
-        self.ax.axhline(y=SimParams.lane3, c='r', lw='4')
+            self.plan_ilqr.append(np.array([i, y]))
+        self.plan_ilqr = np.array(self.plan_ilqr)
+        self.ax.axhline(y=y, c='r', lw='4')
 
     def init(self):
         return self.patches[0], self.patches[1],
@@ -118,24 +118,35 @@ class PySimulator:
         Find the next state of the vehicle given the current state and control input
         """
         # Clips the controller values between min and max accel and steer values
-        control[0] = np.clip(control[0], self.accel_min, self.accel_max)
-        control[1] = np.clip(control[1], state[2]*tan(self.steer_min)/self.wheelbase, state[2]*tan(self.steer_max)/self.wheelbase)
+        control[0] = np.clip(control[0], SimParams.accel_min, SimParams.accel_max)
+        control[1] = np.clip(control[1], state[2]*tan(SimParams.steer_min)/SimParams.wheelbase, state[2]*tan(SimParams.steer_max)/SimParams.wheelbase)
         
-        next_state = np.array([state[0] + cos(state[3])*(state[2]*self.Ts + (control[0]*self.Ts**2)/2),
-                               state[1] + sin(state[3])*(state[2]*self.Ts + (control[0]*self.Ts**2)/2),
-                               np.clip(state[2] + control[0]*self.Ts, 0.0, self.max_speed),
-                              (state[3] + control[1]*self.Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
+        Ts = SimParams.dt
+        next_state = np.array([state[0] + cos(state[3])*(state[2]*Ts + (control[0]*Ts**2)/2),
+                               state[1] + sin(state[3])*(state[2]*Ts + (control[0]*Ts**2)/2),
+                               np.clip(state[2] + control[0]*Ts, 0.0, SimParams.max_speed),
+                              (state[3] + control[1]*Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
         return next_state
 
 class SimParams:
-    def __init__():
-        dt = 0.1
-        map_lengthx = 50
-        map_lengthy = 50
-        lane1 = 4
-        lane2 = 0
-        lane3 = -4
-        num_vehicles = 1
+    dt = 0.1
+    sim_time = 100
+    map_lengthx = 50
+    map_lengthy = 50
+    lane1 = 4
+    lane2 = 0
+    lane3 = -4
+    num_vehicles = 1
+
+    ## Car Parameters
+    car_dims = np.array([2, 1])
+    max_speed = 180/3.6
+    wheelbase = 2.94
+    steer_min = -1.0
+    steer_max = 1.0
+    accel_min = -5.5
+    accel_max = 3.0
+
 
 
 
@@ -146,8 +157,8 @@ if __name__ == "__main__":
 
     NPC_init = np.array([0, 2, 0])
     NPC_state = []
-    for i in range(0, 10, 0.1):
-        NPC_state.append(np.array([NPC_init[0]+i, NPC_init[0], i/SimParams.dt, NPC_init[0]]))
+    # for i in range(0, 10, 0.1):
+    #     NPC_state.append(np.array([NPC_init[0]+i, NPC_init[0], i/SimParams.dt, NPC_init[0]]))
     
     num_vehicles = 2
     pysim = PySimulator(args, SimParams, NPC_state)
