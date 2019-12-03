@@ -58,7 +58,7 @@ class PySimulator:
         # Plot Local Plan
         self.x_local_plan = []
         self.y_local_plan = []
-        self.local_plan, = plt.plot([], [], 'go')
+        self.local_plan_plot, = plt.plot([], [], 'go')
 
         self.create_ilqr_agent()
 
@@ -80,7 +80,7 @@ class PySimulator:
         self.ax.axhline(y=y, c='r', lw='4')
 
     def init_sim(self):
-        return self.patches[0], self.patches[1], self.local_plan,
+        return self.patches[0], self.patches[1], self.local_plan_plot,
 
     def get_ego_states(self):
         ego_states = np.array([[self.current_ego_state[0], self.current_ego_state[1],                         0],
@@ -130,9 +130,9 @@ class PySimulator:
         # Get local plan
         self.x_local_plan = local_plan[0, :]
         self.y_local_plan = local_plan[1, :]
-        self.local_plan.set_data(self.x_local_plan, self.y_local_plan)
+        self.local_plan_plot.set_data(self.x_local_plan, self.y_local_plan)
 
-        return self.patches[0], self.patches[1], self.local_plan,
+        return self.patches[0], self.patches[1], self.local_plan_plot,
 
     def run_simulation(self):
         anim = animation.FuncAnimation(self.fig, self.animate,
