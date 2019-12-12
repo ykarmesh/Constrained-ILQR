@@ -25,7 +25,8 @@ ego_init = np.array([0.0, 0.0, 0.0])
 
 xdata, ydata = [], []
 ln, = plt.plot([], [], 'go')
-
+line = [ln,]
+lines = list(line)
 
 ego_cube = PolyRect(ego_dims) # instantiate ego car
 # ego_cube.createCuboid(total_states[0])
@@ -45,9 +46,10 @@ ego_cube1 = PolyRect(ego_dims) # instantiate ego car
 ego_patch1 = ego_cube1.getPatch(ax)
 
 ax.add_patch(ego_patch1)
+pat = [ego_patch,ego_patch1] + lines
 
 def init():
-    return ego_patch, ego_patch1, ln,
+    return pat
 
 def animate(i):
     # Get new corners of cuboid
@@ -66,7 +68,7 @@ def animate(i):
     new_corner1 = ego_cube1.getCorners()
     # new_corner =  np.array([[3+i, 0], [5+i, 0.], [5, 2+i], [3, 2+i]])
     ego_patch1.set_xy(new_corner1)
-    return ego_patch, ego_patch1, ln,
+    return pat
 
 anim = animation.FuncAnimation(fig, animate,
                                init_func=init,
