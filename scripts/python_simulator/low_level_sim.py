@@ -25,7 +25,8 @@ ego_init = np.array([0.0, 0.0, 0.0])
 
 xdata, ydata = [], []
 ln, = plt.plot([], [], 'go')
-line = [ln,]
+ln1, = plt.plot([], [], 'co')
+line = [ln,ln1,]
 lines = list(line)
 
 ego_cube = PolyRect(ego_dims) # instantiate ego car
@@ -61,7 +62,11 @@ def animate(i):
     # Set patch corners to new corners
     xdata = [15]
     ydata = [0]
+    xdata1 = [20]
+    ydata1 = [0]
+    
     ln.set_data(xdata, ydata)
+    ln1.set_data(xdata1, ydata1)
 
     curr_state1 = total_states1[i]
     ego_cube1.createCuboid(curr_state1)
