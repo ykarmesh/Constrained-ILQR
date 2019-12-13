@@ -66,6 +66,8 @@ class PySimulator:
 
         self.local_plan_plot, = plt.plot([], [], 'go', ms=10)
         self.desired_plan_plot, = plt.plot([], [], 'co', ms=5)
+        trajs = [self.local_plan_plot, self.desired_plan_plot,] # C3
+        self.line_plots = list(trajs)
 
         self.create_ilqr_agent()
         self.NPC_states = []
@@ -76,10 +78,13 @@ class PySimulator:
         for i in range(num_vehicles):
             self.NPC_dict[i] = PolyRect(self.simparams.car_dims)
             self.patches.append(self.NPC_dict[i].getPatch(self.ax, colors[i]))
+            self.ax.add_patch(self.patches[i]) # C1
         
         # May need to add loop here
-        self.ax.add_patch(self.patches[0])
-        self.ax.add_patch(self.patches[1])
+        # self.ax.add_patch(self.patches[0]) C2
+        # self.ax.add_patch(self.patches[1])
+
+        self.all_patches = self.patches + self.line_plots
 
     def simulate_npc(self, init_state, control):
         self.NPC_states.append(init_state)
@@ -98,8 +103,10 @@ class PySimulator:
         self.plan_ilqr = np.array(self.plan_ilqr)
         self.ax.axhline(y=y, c='r', lw='2')
 
-    def init_sim(self):
-        return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
+    # def init_sim(self):
+    #     return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
+    def init_sim(self): #C4
+        return self.all_patches
 
     def get_ego_states(self):
         ego_states = np.array([[self.current_ego_state[0], self.current_ego_state[1],                         0],
@@ -141,8 +148,9 @@ class PySimulator:
 
         # Get new NPC patch
         # pdb.set_trace()
-        self.NPC_dict[1].createCuboid([self.NPC_states[0, i], self.NPC_states[1, i], self.NPC_states[3, i]])
-        self.patches[1].set_xy(self.NPC_dict[1].getCorners())
+        for j in range(1,self.num_vehicles):
+            self.NPC_dict[j].createCuboid([self.NPC_states[0, i], self.NPC_states[1, i], self.NPC_states[3, i]])
+            self.patches[j].set_xy(self.NPC_dict[j].getCorners())
 
         # Get local plan
         self.x_local_plan = local_plan[:, 0]
@@ -154,7 +162,8 @@ class PySimulator:
         self.y_desired_plan = desired_path[:, 1]
         self.desired_plan_plot.set_data(self.x_desired_plan, self.y_desired_plan)
 
-        return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
+        # return self.patches[0], self.patches[1], self.local_plan_plot, self.desired_plan_plot,
+        return self.all_patches
 
     def run_simulation(self):
         anim = animation.FuncAnimation(self.fig, self.animate,
@@ -190,7 +199,7 @@ class SimParams:
     lane1 = 5
     lane2 = 0
     lane3 = -5
-    num_vehicles = 1
+    num_vehicles = 2
 
     ## Car Parameters
     car_dims = np.array([4, 2])
