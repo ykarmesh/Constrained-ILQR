@@ -18,6 +18,7 @@ try:
 except IndexError:
     print("Cannot add the common path {}".format(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+print(sys.path)
 from arguments import add_arguments
 from PolyRect import PolyRect
 from ilqr.iLQR import iLQR
@@ -44,6 +45,7 @@ class PySimulator:
         self.num_vehicles = self.simparams.num_vehicles
         self.navigation_agent = None
         self.current_ego_state = self.simparams.start_state
+        self.last_ego_states = [self.simparams.start_state[0:2]]
 
         # Plot parameters
         self.fig = plt.figure(figsize=(25, 5))
@@ -177,6 +179,7 @@ class PySimulator:
                                np.clip(state[2] + control[0]*Ts, 0.0, self.simparams.max_speed),
                               (state[3] + control[1]*Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
         # print("Next state {}".format(next_state))
+        self.last_ego_states.append(next_state[0:2])
         return next_state
 
 class SimParams:
