@@ -35,8 +35,8 @@ def add_arguments(parser):
     parser.add_argument('--w_acc', type=float, default=1.00, help="Acceleration cost")
     parser.add_argument('--w_yawrate', type=float, default=3.00, help="Yaw rate cost")
 
-    parser.add_argument('--w_pos', type=float, default=2.00, help="Path deviation cost")
-    parser.add_argument('--w_vel', type=float, default=0.50, help="Velocity cost")
+    parser.add_argument('--w_pos', type=float, default=0.50, help="Path deviation cost")
+    parser.add_argument('--w_vel', type=float, default=2.0, help="Velocity cost")
 
     parser.add_argument('--q1_acc', type=float, default=1.0, help="Barrier function q1, acc")
     parser.add_argument('--q2_acc', type=float, default=1.0, help="Barrier function q2, acc")

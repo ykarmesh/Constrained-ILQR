@@ -45,7 +45,8 @@ class PySimulator:
         self.num_vehicles = self.simparams.num_vehicles
         self.navigation_agent = None
         self.current_ego_state = self.simparams.start_state
-        self.last_ego_states = [self.simparams.start_state[0:2]]
+        # self.last_ego_states = [self.simparams.start_state[0:2]]
+        self.last_ego_states = np.array([self.simparams.start_state[0], self.simparams.start_state[1]])
 
         # Plot parameters
         self.fig = plt.figure(figsize=(25, 5))
@@ -66,7 +67,8 @@ class PySimulator:
 
         self.local_plan_plot, = plt.plot([], [], 'go', ms=10)
         self.desired_plan_plot, = plt.plot([], [], 'co', ms=5)
-        trajs = [self.local_plan_plot, self.desired_plan_plot,] # C3
+        self.last_states_plots, = plt.plot([], [], 'mo', ms=5)
+        trajs = [self.local_plan_plot, self.desired_plan_plot, self.last_states_plots,] # C3
         self.line_plots = list(trajs)
 
         self.create_ilqr_agent()
@@ -90,8 +92,8 @@ class PySimulator:
         self.NPC_states.append(init_state)
         control = np.hstack((control, np.zeros((2, self.args.horizon))))
         for i in range(control.shape[1]):
-            next_state = self.run_model_simulation(self.NPC_states[i], control[:, i])
-            self.NPC_states.append(next_state)
+            NPC_next_state = self.run_model_simulation(self.NPC_states[i], control[:, i])
+            self.NPC_states.append(NPC_next_state)
         self.NPC_states = np.array(self.NPC_states).T
         
 
@@ -143,6 +145,9 @@ class PySimulator:
         # Get new ego patch
         desired_path, local_plan, control = self.run_step_ilqr()
         self.current_ego_state = self.run_model_simulation(self.current_ego_state, control)
+
+        self.last_ego_states = np.vstack((self.last_ego_states, self.current_ego_state[0:2]))
+        
         self.NPC_dict[0].createCuboid([self.current_ego_state[0], self.current_ego_state[1], self.current_ego_state[3]]) # Update ego vehicle patch
         self.patches[0].set_xy(self.NPC_dict[0].getCorners()) # Update ego vehicle patch
 
@@ -156,6 +161,8 @@ class PySimulator:
         self.x_local_plan = local_plan[:, 0]
         self.y_local_plan = local_plan[:, 1]
         self.local_plan_plot.set_data(self.x_local_plan, self.y_local_plan)
+        
+        self.last_states_plots.set_data(self.last_ego_states[:, 0],self.last_ego_states[:, 1])
 
         #Get desired plan
         self.x_desired_plan = desired_path[:, 0]
@@ -188,7 +195,7 @@ class PySimulator:
                                np.clip(state[2] + control[0]*Ts, 0.0, self.simparams.max_speed),
                               (state[3] + control[1]*Ts)%(2*np.pi)])  # wrap angles between 0 and 2*pi
         # print("Next state {}".format(next_state))
-        self.last_ego_states.append(next_state[0:2])
+
         return next_state
 
 class SimParams:
